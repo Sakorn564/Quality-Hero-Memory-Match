@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HDA OEE Executive Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#000000;--bg-card:#131314;--card:#1F1F1F;--card-hi:#1a1a1b;
+  --border:#2a2a2a;--border-hi:#3A3A3A;--fg:#FAFAFA;--muted:#AFB5BE;--dim:#737373;
+  --green:#4ADE80;--red:#F87171;--yellow:#FBBF24;--blue-light:#93C5FD;
+  --grad:linear-gradient(90deg,#2168FD 0%,#1E71FA 22%,#37B1D3 55%,#39D6CB 78%,#3AE4C9 100%);
+  --grad-d:linear-gradient(135deg,#2168FD 0%,#37B1D3 50%,#3AE4C9 100%);
+  --grad-v:linear-gradient(180deg,#2168FD 0%,#3AE4C9 100%);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.gt{background:var(--grad-d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.f{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}.f.v{opacity:1;transform:none}
+.f.d1{transition-delay:.07s}.f.d2{transition-delay:.14s}.f.d3{transition-delay:.21s}
+.f.d4{transition-delay:.28s}.f.d5{transition-delay:.35s}.f.d6{transition-delay:.42s}
+
+/* LAYOUT */
+.page{max-width:1480px;margin:0 auto;padding:28px 20px 64px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;gap:16px;flex-wrap:wrap}
+.page-title{font-size:clamp(32px,4vw,48px);font-weight:900;letter-spacing:-2px;line-height:1}
+.last-updated{font-size:12px;font-weight:600;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:6px}
+.header-right{display:flex;gap:10px;align-items:center}
+.live-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--green);background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.18);padding:6px 14px;border-radius:20px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,.4)}70%{opacity:.7;box-shadow:0 0 0 5px rgba(74,222,128,0)}}
+.week-badge{background:rgba(33,104,253,.12);border:1px solid rgba(33,104,253,.3);color:var(--blue-light);font-size:14px;font-weight:800;padding:7px 16px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.week-badge:hover{background:rgba(33,104,253,.22)}
+.btn-export{background:rgba(33,104,253,.1);border:1px solid rgba(33,104,253,.25);color:var(--blue-light);font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;padding:8px 16px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s}
+.btn-export:hover{background:rgba(33,104,253,.2)}
+
+/* HERO METRICS */
+.hero-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:700px){.hero-metrics{grid-template-columns:repeat(2,1fr)}}
+.hero-metric-card{background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:22px 18px;position:relative;overflow:hidden;transition:background .2s,border-color .2s}
+.hero-metric-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 2px 2px 0;opacity:.8}
+.hm-oee::before{background:var(--grad-v)}.hm-av::before{background:linear-gradient(180deg,#2168FD,#60a5fa)}
+.hm-pf::before{background:linear-gradient(180deg,#3AE4C9,#0D9488)}.hm-q::before{background:linear-gradient(180deg,#7C3AED,#a78bfa)}
+.hero-metric-card:hover{background:var(--card-hi);border-color:var(--border-hi)}
+.hm-label{font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.hm-value{font-size:36px;font-weight:900;letter-spacing:-1.5px;line-height:1;margin-bottom:4px}
+.hm-target{font-size:11px;font-weight:600;color:var(--dim)}
+.hm-delta{font-size:11px;font-weight:700;margin-top:8px;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px}
+.delta-neg{background:rgba(248,113,113,.12);color:#F87171}.delta-pos{background:rgba(74,222,128,.1);color:var(--green)}
+.hero-glow{position:absolute;width:200px;height:200px;background:radial-gradient(circle,rgba(33,104,253,.07) 0%,transparent 70%);top:-60px;right:-60px;pointer-events:none}
+
+/* TOP GRID */
+.top-grid{display:grid;grid-template-columns:310px 1fr;gap:18px;margin-bottom:20px}
+@media(max-width:900px){.top-grid{grid-template-columns:1fr}}
+
+/* GAUGE CARD */
+.gauge-card{background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:22px;position:relative;overflow:hidden}
+.gauge-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--grad-v);border-radius:0 2px 2px 0;opacity:.7}
+.gauge-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+.gauge-wrap{position:relative;width:220px;margin:0 auto}
+.gauge-center-val{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);text-align:center}
+.gauge-pct{font-size:30px;font-weight:900;letter-spacing:-1px}
+.gauge-sub{font-size:10px;font-weight:600;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.metric-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px}
+.metric-bar-item{display:flex;flex-direction:column;align-items:center;gap:5px}
+.bar-track{width:30px;height:80px;background:rgba(255,255,255,.04);border-radius:6px;position:relative;overflow:hidden;border:1px solid var(--border)}
+.bar-fill{position:absolute;bottom:0;left:0;right:0;border-radius:6px;transition:height .8s cubic-bezier(.4,0,.2,1)}
+.bar-pct{font-size:11px;font-weight:800}
+.bar-label{font-size:10px;font-weight:700;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;text-align:center}
+
+/* ═══════════════════════════
+   SUMMARY CARD — FULLY EDITABLE
+═══════════════════════════ */
+.summary-card{background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:26px;position:relative;overflow:hidden}
+.edit-mode-btn{position:absolute;top:18px;right:18px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.5px;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .2s;border:none;font-family:'Manrope',sans-serif}
+.edit-mode-btn.idle{background:rgba(33,104,253,.1);border:1px solid rgba(33,104,253,.25);color:var(--blue-light)}
+.edit-mode-btn.idle:hover{background:rgba(33,104,253,.2)}
+.edit-mode-btn.editing{background:rgba(58,228,201,.1);border:1px solid rgba(58,228,201,.3);color:#3AE4C9}
+.summary-header-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;margin-right:110px}
+.summary-week-label{font-size:22px;font-weight:900;letter-spacing:-.5px}
+.status-tag{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:5px 14px;border-radius:20px}
+.tag-fail{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:#F87171}
+.tag-pass{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:var(--green)}
+.summary-oee-status{font-size:15px;font-weight:800;margin-bottom:14px}
+.summary-bullets-list{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.sum-bullet{font-size:13px;font-weight:500;color:var(--muted);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.sum-bullet-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.dot-red{background:#F87171}.dot-green{background:var(--green)}
+.improve-title-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.improve-list{display:flex;flex-direction:column;gap:7px}
+/* Improve row — color coded */
+.improve-row{font-size:13px;font-weight:500;color:var(--fg);display:flex;align-items:flex-start;gap:8px;line-height:1.5;border-radius:9px;padding:9px 13px;transition:all .2s;border-left:3px solid transparent}
+.improve-row.irow-green{background:rgba(74,222,128,.07);border-color:#4ADE80;border:1px solid rgba(74,222,128,.18);border-left:3px solid #4ADE80}
+.improve-row.irow-yellow{background:rgba(251,191,36,.06);border-color:#FBBF24;border:1px solid rgba(251,191,36,.2);border-left:3px solid #FBBF24}
+.improve-row.irow-red{background:rgba(248,113,113,.07);border-color:#F87171;border:1px solid rgba(248,113,113,.2);border-left:3px solid #F87171}
+.improve-row.irow-blue{background:rgba(33,104,253,.05);border:1px solid rgba(33,104,253,.12);border-left:3px solid #2168FD}
+.improve-key{font-weight:800;flex-shrink:0}
+.improve-key-green{color:#4ADE80}.improve-key-yellow{color:#FBBF24}.improve-key-red{color:#F87171}.improve-key-blue{color:var(--blue-light)}
+.improve-val{color:var(--muted)}
+/* Edit mode */
+.summary-edit{display:none;flex-direction:column;gap:14px}
+.summary-edit.show{display:flex}
+.edit-row{display:flex;flex-direction:column;gap:5px}
+.edit-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
+.edit-input-text{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;padding:9px 13px;outline:none;transition:border-color .2s}
+.edit-input-text:focus{border-color:rgba(33,104,253,.45);background:rgba(33,104,253,.04)}
+.edit-row-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.edit-section-title{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue-light);border-top:1px solid var(--border);padding-top:12px;margin-top:2px}
+.improve-edit-group{display:grid;grid-template-columns:100px 60px 1fr 32px;gap:8px;align-items:center}
+.improve-edit-key{background:rgba(33,104,253,.08);border:1px solid rgba(33,104,253,.2);color:var(--blue-light);font-family:'Manrope',sans-serif;font-size:12px;font-weight:800;padding:8px 11px;border-radius:8px;outline:none;width:100%}
+.improve-edit-key:focus{border-color:rgba(33,104,253,.5)}
+.improve-edit-color{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--fg);font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;padding:8px 6px;border-radius:8px;outline:none;cursor:pointer;width:100%}
+.improve-edit-val{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--fg);font-family:'Manrope',sans-serif;font-size:13px;font-weight:500;padding:8px 11px;border-radius:8px;outline:none;width:100%}
+.improve-edit-val:focus{border-color:rgba(33,104,253,.4)}
+.add-improve-btn{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--blue-light);background:rgba(33,104,253,.06);border:1px dashed rgba(33,104,253,.25);border-radius:8px;padding:7px 13px;cursor:pointer;transition:all .2s;font-family:'Manrope',sans-serif;margin-top:2px}
+.add-improve-btn:hover{background:rgba(33,104,253,.12);border-color:rgba(33,104,253,.4)}
+.remove-improve-btn{width:28px;height:28px;border-radius:50%;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:#F87171;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-family:'Manrope',sans-serif}
+.remove-improve-btn:hover{background:rgba(248,113,113,.18)}
+.bullet-edit-row{display:grid;grid-template-columns:110px 1fr 32px;gap:8px;align-items:center}
+.bullet-status-select{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--fg);font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;padding:7px 10px;border-radius:8px;outline:none;cursor:pointer;width:100%}
+
+/* COLOR LEGEND */
+.color-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* SECTION LABEL */
+.section-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+
+/* PERF TABLE */
+.perf-table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:22px}
+.perf-table{width:100%;border-collapse:collapse}
+.perf-table th{background:rgba(33,104,253,.1);font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#FFFFFF;padding:12px 14px;text-align:center;border-bottom:1px solid var(--border)}
+.perf-table th:first-child{text-align:left}
+.perf-table th.col-oee{background:linear-gradient(180deg,rgba(33,104,253,.3),rgba(58,228,201,.15));color:#fff;font-size:13px;font-weight:900;border-left:2px solid rgba(33,104,253,.6);border-right:2px solid rgba(58,228,201,.4)}
+.perf-table td{padding:11px 14px;font-size:14px;font-weight:700;text-align:center;border-bottom:1px solid rgba(42,42,42,.5);color:#E2E8F0;transition:background .15s}
+.perf-table td:first-child{text-align:left;font-weight:800;color:#fff}
+.perf-table tr:last-child td{border-bottom:none}
+.perf-table tr:hover td{background:var(--card-hi)}
+.perf-table td.col-oee{background:rgba(33,104,253,.08);border-left:2px solid rgba(33,104,253,.4);border-right:2px solid rgba(58,228,201,.25)}
+.oee-cell{font-size:15px;font-weight:900;border-radius:8px;padding:5px 12px;display:inline-block;letter-spacing:-.3px}
+.oee-good{background:rgba(74,222,128,.15);color:#4ADE80;border:1px solid rgba(74,222,128,.3)}
+.oee-warn{background:rgba(251,191,36,.12);color:#FBBF24;border:1px solid rgba(251,191,36,.3)}
+.oee-bad{background:rgba(248,113,113,.12);color:#F87171;border:1px solid rgba(248,113,113,.3)}
+
+/* ═══════════════════════════
+   TREND TABLE — COLOR BAND
+═══════════════════════════ */
+.trend-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:22px}
+.trend-table{width:100%;border-collapse:collapse}
+.trend-table th{padding:12px 10px;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#fff;background:rgba(33,104,253,.12);border-bottom:1px solid var(--border);text-align:center;white-space:nowrap}
+.trend-table th.row-head{text-align:left;min-width:110px;font-size:12px}
+.trend-table th.target-col{background:rgba(33,104,253,.2);color:#93C5FD;font-size:12px;font-weight:900}
+.trend-table th.col-fw03{background:linear-gradient(180deg,rgba(33,104,253,.5),rgba(58,228,201,.3));color:#fff;font-size:14px;font-weight:900;border-left:3px solid #2168FD;border-right:3px solid #3AE4C9;text-shadow:0 0 12px rgba(58,228,201,.5)}
+.fw03-badge{display:inline-block;background:linear-gradient(135deg,#2168FD,#3AE4C9);color:#fff;font-size:9px;font-weight:900;letter-spacing:1px;padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:middle}
+.trend-table td{padding:0;text-align:center;border-bottom:1px solid rgba(42,42,42,.4);font-weight:800;font-size:14px;cursor:pointer;transition:filter .15s}
+.trend-table td:first-child{text-align:left;font-weight:800;font-size:14px;color:#fff;background:rgba(255,255,255,.025);white-space:nowrap;padding:11px 10px;cursor:default}
+.trend-table td:nth-child(2){text-align:left;font-size:12px;font-weight:600;color:var(--muted);padding:11px 10px;cursor:default}
+.trend-table td:nth-child(3){padding:11px 10px}
+.trend-table tr:last-child td{border-bottom:none}
+.trend-table td:hover{filter:brightness(1.15)}
+
+/* Color band cell */
+.cell-band{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;height:100%;padding:11px 8px;font-size:14px;font-weight:800;transition:filter .15s}
+/* Green = meet target */
+.band-green{background:rgba(74,222,128,.13);color:#4ADE80}
+/* Yellow = within ±0 to -5 */
+.band-yellow{background:rgba(251,191,36,.12);color:#FBBF24}
+/* Red = more than -5 below target */
+.band-red{background:rgba(248,113,113,.13);color:#F87171}
+/* OEE row */
+.oee-row td{background:rgba(33,104,253,.05)!important}
+.oee-row td .cell-band{background:transparent!important}
+.oee-row .band-green{background:rgba(74,222,128,.15)!important}
+.oee-row .band-yellow{background:rgba(251,191,36,.14)!important}
+.oee-row .band-red{background:rgba(248,113,113,.15)!important}
+.oee-row td:first-child{color:#93C5FD!important;font-size:15px!important}
+/* FW03 column */
+.trend-table td.col-fw03{border-left:3px solid rgba(33,104,253,.5);border-right:3px solid rgba(58,228,201,.3)}
+.trend-table td.col-fw03 .cell-band{font-size:15px!important;font-weight:900!important}
+.oee-row td.col-fw03 .cell-band{background:linear-gradient(135deg,rgba(33,104,253,.22),rgba(58,228,201,.14))!important;font-size:16px!important}
+/* Target col */
+.cell-target{color:#93C5FD!important;font-weight:900!important;font-size:14px!important;padding:11px 10px}
+
+/* EDIT INPUT */
+.edit-input{background:rgba(33,104,253,.15);border:1px solid rgba(33,104,253,.4);color:#fff;font-family:'Manrope',sans-serif;font-size:13px;font-weight:800;border-radius:6px;padding:3px 6px;width:62px;text-align:center;outline:none}
+.edit-input:focus{border-color:rgba(58,228,201,.7);box-shadow:0 0 0 3px rgba(58,228,201,.1)}
+
+/* EVIDENCE */
+.ev-indicator{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);cursor:pointer;margin-left:4px;transition:all .2s;flex-shrink:0}
+.ev-indicator:hover{background:rgba(251,191,36,.25);transform:scale(1.15)}
+.ev-filled{background:rgba(251,191,36,.25);border-color:rgba(251,191,36,.6)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--bg-card);border:1px solid rgba(33,104,253,.3);border-radius:20px;width:540px;max-width:95vw;padding:30px;transform:scale(.93) translateY(14px);transition:transform .3s,opacity .3s;opacity:0}
+.modal-overlay.open .modal-box{transform:scale(1) translateY(0);opacity:1}
+.modal-title{font-size:18px;font-weight:900;margin-bottom:4px}
+.modal-subtitle{font-size:13px;color:var(--muted);margin-bottom:22px}
+.modal-section{margin-bottom:18px}
+.modal-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.modal-textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:var(--fg);font-family:'Manrope',sans-serif;font-size:13px;padding:13px;resize:vertical;min-height:90px;outline:none;transition:border-color .2s}
+.modal-textarea:focus{border-color:rgba(33,104,253,.5)}
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:26px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.drop-zone:hover,.drop-zone.drag{border-color:rgba(33,104,253,.45);background:rgba(33,104,253,.04)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-icon{margin:0 auto 10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(33,104,253,.12);border-radius:9px}
+.drop-text{font-size:13px;font-weight:700;color:var(--muted)}
+.drop-sub{font-size:11px;color:var(--dim);margin-top:3px}
+.evidence-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.evidence-item{display:flex;align-items:center;gap:10px;background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:8px;padding:9px 13px}
+.evidence-name{flex:1;font-size:12px;font-weight:600;color:var(--green)}
+.evidence-remove{font-size:11px;color:#F87171;cursor:pointer;font-weight:700;padding:3px 8px;border-radius:4px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.18)}
+.evidence-remove:hover{background:rgba(248,113,113,.18)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+.btn-cancel{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;padding:10px 22px;border-radius:9px;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{background:rgba(255,255,255,.1)}
+.btn-save{background:var(--grad);border:none;color:#fff;font-family:'Manrope',sans-serif;font-size:13px;font-weight:800;padding:10px 22px;border-radius:9px;cursor:pointer;transition:all .2s}
+.btn-save:hover{opacity:.9;transform:translateY(-1px)}
+.tooltip{position:fixed;background:var(--card);border:1px solid var(--border-hi);border-radius:8px;padding:8px 13px;font-size:12px;font-weight:600;color:var(--fg);pointer-events:none;z-index:500;opacity:0;transition:opacity .15s;white-space:nowrap}
+.divider{height:1px;background:var(--border);margin:24px 0}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header f">
+    <div>
+      <div class="page-title gt">HDA OEE Overview</div>
+      <div class="last-updated">Last updated: <span id="lastUpdated">2026-06-25</span> &nbsp;·&nbsp; HDA Assembly</div>
+    </div>
+    <div class="header-right">
+      <div class="live-chip"><div class="live-dot"></div> LIVE</div>
+      <div class="week-badge" onclick="promptWeek()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="weekLabel">FW03</span>
+      </div>
+      <button class="btn-export" onclick="exportData()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- HERO METRICS -->
+  <div class="hero-metrics f d1">
+    <div class="hero-metric-card hm-oee">
+      <div class="hero-glow"></div>
+      <div class="hm-label">OEE</div>
+      <div class="hm-value gt" id="hero-oee">92.2%</div>
+      <div class="hm-target">Target: 95.0%</div>
+      <div class="hm-delta delta-neg" id="delta-oee">▼ −2.8% vs target</div>
+    </div>
+    <div class="hero-metric-card hm-av">
+      <div class="hm-label">Availability (AV)</div>
+      <div class="hm-value" id="hero-av" style="color:#60a5fa">92.8%</div>
+      <div class="hm-target">Target: 96.0%</div>
+      <div class="hm-delta delta-neg" id="delta-av">▼ −3.2% vs target</div>
+    </div>
+    <div class="hero-metric-card hm-pf">
+      <div class="hm-label">Performance (PF)</div>
+      <div class="hm-value" id="hero-pf" style="color:#3AE4C9">99.6%</div>
+      <div class="hm-target">Target: 99.3%</div>
+      <div class="hm-delta delta-pos" id="delta-pf">▲ +0.3% vs target</div>
+    </div>
+    <div class="hero-metric-card hm-q">
+      <div class="hm-label">Quality (Q)</div>
+      <div class="hm-value" id="hero-q" style="color:#a78bfa">99.7%</div>
+      <div class="hm-target">Target: 99.7%</div>
+      <div class="hm-delta delta-pos" id="delta-q">▲ On target</div>
+    </div>
+  </div>
+
+  <!-- TOP GRID -->
+  <div class="top-grid">
+    <!-- GAUGE -->
+    <div class="gauge-card f d2">
+      <div class="gauge-title">OEE Gauge — <span style="color:#3AE4C9;font-weight:900" id="gaugeWeekLabel">FW03</span></div>
+      <div class="gauge-wrap">
+        <canvas id="gaugeCanvas" width="220" height="130"></canvas>
+        <div class="gauge-center-val">
+          <div class="gauge-pct gt" id="gaugePct">92.2%</div>
+          <div class="gauge-sub">OEE Score</div>
+        </div>
+      </div>
+      <div class="metric-bars" id="metricBars"></div>
+    </div>
+
+    <!-- SUMMARY CARD -->
+    <div class="summary-card f d3">
+      <button class="edit-mode-btn idle" id="editModeBtn" onclick="toggleEditMode()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <span id="editBtnText">Edit</span>
+      </button>
+
+      <!-- DISPLAY -->
+      <div id="summaryDisplay">
+        <div class="summary-header-row">
+          <div class="summary-week-label">Summary on <span id="dispWeek" style="background:linear-gradient(135deg,#2168FD,#3AE4C9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">FW03</span></div>
+        </div>
+        <div id="dispStatusTag" class="status-tag tag-fail" style="display:inline-block;margin-bottom:12px">NOT ACHIEVED</div>
+        <div class="summary-oee-status" id="dispOeeStatus" style="color:#F87171">OEE not achieve target (92.2% vs 95.0%)</div>
+        <div class="summary-bullets-list" id="dispBullets"></div>
+        <div class="improve-title-label">Improvement Plan</div>
+        <div class="improve-list" id="dispImprove"></div>
+      </div>
+
+      <!-- EDIT -->
+      <div class="summary-edit" id="summaryEdit">
+        <div class="edit-row">
+          <div class="edit-label">Week Label</div>
+          <input class="edit-input-text" id="editWeek" value="FW03" placeholder="e.g. FW04">
+        </div>
+        <div class="edit-row-2col">
+          <div class="edit-row">
+            <div class="edit-label">OEE Actual (%)</div>
+            <input class="edit-input-text" id="editOeeActual" type="number" step="0.1" value="92.2">
+          </div>
+          <div class="edit-row">
+            <div class="edit-label">OEE Target (%)</div>
+            <input class="edit-input-text" id="editOeeTarget" type="number" step="0.1" value="95.0">
+          </div>
+        </div>
+        <div class="edit-section-title">Bullet Points</div>
+        <div id="bulletEditList" style="display:flex;flex-direction:column;gap:8px"></div>
+        <button class="add-improve-btn" onclick="addBullet()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add bullet
+        </button>
+        <div class="edit-section-title">Improvement Plan
+          <span style="font-size:9px;font-weight:600;color:var(--dim);letter-spacing:.5px;text-transform:none;margin-left:8px">Color: 🟢 Green = Met &nbsp;🟡 Yellow = ±5 &nbsp;🔴 Red = &gt;5 miss</span>
+        </div>
+        <div id="improveEditList" style="display:flex;flex-direction:column;gap:8px"></div>
+        <button class="add-improve-btn" onclick="addImproveRow()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add item
+        </button>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+          <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+          <button class="btn-save" onclick="applyEdit()">Apply Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERFORMANCE TABLE -->
+  <div class="section-label f d4">Weekly Performance by Line — <span style="color:#3AE4C9;font-weight:900" id="perfWeekLabel">FW03</span></div>
+  <div class="perf-table-wrap f d4">
+    <table class="perf-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;font-size:13px">Line</th>
+          <th class="col-oee">OEE</th>
+          <th>Quality</th><th>Performance</th><th>Availability</th>
+          <th>DT</th><th>Idle</th><th>Switching</th><th>Input Loading</th><th>DGR</th><th>Evidence</th>
+        </tr>
+      </thead>
+      <tbody id="perfTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- TREND TABLE -->
+  <div class="section-label f d5" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <span>Monthly Trend — Key Factors &nbsp;<span style="font-size:10px;color:var(--dim);font-weight:600">(Click to edit)</span></span>
+    <!-- LEGEND -->
+    <div class="color-legend" style="margin-bottom:0;flex:1;min-width:200px">
+      <div class="legend-item"><div class="legend-dot" style="background:#4ADE80"></div><span style="color:#4ADE80">Meet Target</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FBBF24"></div><span style="color:#FBBF24">Within −5%</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#F87171"></div><span style="color:#F87171">Miss &gt;5%</span></div>
+      <div class="legend-item" style="margin-left:auto;font-size:10px;color:var(--dim)">OEE = AV × PF × Q (auto)</div>
+    </div>
+  </div>
+  <div class="trend-wrap f d5">
+    <table class="trend-table">
+      <thead>
+        <tr>
+          <th class="row-head">Key Factor</th>
+          <th class="row-head">Sub Factor</th>
+          <th class="target-col">Target</th>
+          <th>Oct</th><th>Nov</th><th>Dec</th><th>Jan</th><th>Feb</th>
+          <th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th>
+          <th>FW02</th>
+          <th class="col-fw03">FW03 <span class="fw03-badge">NOW</span></th>
+        </tr>
+      </thead>
+      <tbody id="trendBody"></tbody>
+    </table>
+  </div>
+
+  <div class="divider f d6"></div>
+  <div style="text-align:center;font-size:11px;color:var(--dim);letter-spacing:1px;text-transform:uppercase" class="f d6">
+    HDA OEE Dashboard &nbsp;·&nbsp; Western Digital &nbsp;·&nbsp; Green = Meet Target · Yellow = Within −5% · Red = Miss &gt;5%
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<!-- EVIDENCE MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title">Attach Evidence</div>
+    <div class="modal-subtitle" id="modalSubtitle"></div>
+    <div class="modal-section">
+      <div class="modal-label">Root Cause / Remark</div>
+      <textarea class="modal-textarea" id="evidenceNote" placeholder="Describe root cause, action taken, or deviation reason..."></textarea>
+    </div>
+    <div class="modal-section">
+      <div class="modal-label">Attach Files</div>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" multiple accept="image/*,.pdf,.xlsx,.docx" id="fileInput" onchange="handleFiles(this.files)">
+        <div class="drop-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></div>
+        <div class="drop-text">Drop files or click to browse</div>
+        <div class="drop-sub">Images, PDF, Excel, Word</div>
+      </div>
+      <div class="evidence-list" id="evidenceFileList"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEvidence()">Save Evidence</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────
+const state = { week:'FW03', oee:92.2, av:92.8, pf:99.6, q:99.7, targets:{av:96.0,pf:99.3,q:99.7,oee:95.0} };
+
+let summaryData = {
+  week:'FW03', oeeActual:92.2, oeeTarget:95.0,
+  bullets:[
+    {pass:false, text:'Availability not achieve target (92.8% vs 96.0%)'},
+    {pass:true,  text:'Performance achieve target (99.6% vs 99.3%)'},
+    {pass:true,  text:'Quality achieve target (99.7% vs 99.7%)'}
+  ],
+  improve:[
+    {key:'DT',          color:'yellow', val:'Waiting tooling update'},
+    {key:'Yield',       color:'red',    val:'Focus on HDA line to line defect variation'},
+    {key:'Performance', color:'green',  val:'Cycle time optimization ongoing'}
+  ]
+};
+
+const perfLines=[
+  {name:'London',       oee:89.4,q:99.5,pf:99.1,av:90.8,dt:9.8, idle:0,   sw:3.2,input:16843,dgr:10300},
+  {name:'PCM/PDQ/PPL',  oee:96.2,q:99.9,pf:99.5,av:96.8,dt:2.9, idle:0.3, sw:3.9,input:35631,dgr:10333},
+  {name:'Sydney P1/P2', oee:92.6,q:99.6,pf:99.6,av:93.4,dt:6.6, idle:0.16,sw:7.8,input:86515,dgr:10900},
+  {name:'Sydney P5',    oee:90.4,q:99.8,pf:99.7,av:90.8,dt:7.6, idle:1.8, sw:3.6,input:92242,dgr:10966}
+];
+const trendData=[
+  {key:'Availability (AV)',  sub:'AV',                target:96.0, vals:[92.4,91.7,91.5,92.7,93.6,93.7,93.5,92.4,92.0,91.4,90.9,92.8]},
+  {key:'Performance (PF)',   sub:'Output & Cycle Time',target:99.3, vals:[98.4,98.7,98.0,98.4,98.8,99.1,98.7,99.1,99.0,98.4,98.0,99.6]},
+  {key:'Quality (Q)',        sub:'Yield',              target:99.7, vals:[99.5,99.5,99.5,99.5,99.6,99.6,99.6,99.6,99.6,99.7,99.7,99.7]},
+  {key:'OEE',                sub:'AV × PF × Q',        target:95.0, vals:[90.5,90.0,89.2,90.9,92.1,92.5,91.9,91.2,90.7,89.6,88.8,92.2]}
+];
+const months=['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','FW02','FW03'];
+const FW03_COL=11;
+const evidenceStore={};
+let currentEvidenceKey=null;
+let editModeActive=false;
+
+// ── COLOR BAND LOGIC ──────────────────────────
+// Green = val >= target
+// Yellow = target - val <= 5 (within 5% miss)
+// Red = target - val > 5
+function bandClass(val, target) {
+  const diff = target - val;
+  if (diff <= 0)  return 'band-green';
+  if (diff <= 5)  return 'band-yellow';
+  return 'band-red';
+}
+// Evidence icon only for yellow/red
+function needsEvidence(val, target) { return target - val > 0; }
+
+// ── GAUGE ─────────────────────────────────────
+function drawGauge(pct){
+  const c=document.getElementById('gaugeCanvas'),ctx=c.getContext('2d'),cx=110,cy=115,r=88;
+  ctx.clearRect(0,0,220,130);
+  ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,0);ctx.lineWidth=14;ctx.strokeStyle='#1F1F20';ctx.lineCap='round';ctx.stroke();
+  [{from:0,to:.6,color:'#dc2626'},{from:.6,to:.75,color:'#f97316'},{from:.75,to:.88,color:'#eab308'},{from:.88,to:1,color:'#22c55e'}]
+    .forEach(z=>{ctx.beginPath();ctx.arc(cx,cy,r,Math.PI+z.from*Math.PI,Math.PI+z.to*Math.PI);ctx.lineWidth=14;ctx.strokeStyle=z.color;ctx.lineCap='round';ctx.stroke()});
+  const tA=Math.PI+0.95*Math.PI;
+  ctx.beginPath();ctx.moveTo(cx+(r-10)*Math.cos(tA),cy+(r-10)*Math.sin(tA));ctx.lineTo(cx+(r+6)*Math.cos(tA),cy+(r+6)*Math.sin(tA));ctx.strokeStyle='#FBBF24';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();
+  const nA=Math.PI+Math.min(Math.max(pct/100,0),1)*Math.PI;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+(r-8)*Math.cos(nA),cy+(r-8)*Math.sin(nA));ctx.strokeStyle='#FAFAFA';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,6,0,2*Math.PI);ctx.fillStyle='#FAFAFA';ctx.fill();
+  ctx.font='700 9px Manrope,sans-serif';ctx.fillStyle='#737373';ctx.fillText('0%',22,cy+16);ctx.fillText('100%',168,cy+16);
+  ctx.font='600 8px Manrope,sans-serif';ctx.fillStyle='#FBBF24';ctx.fillText('95% T',cx+28,cy-70);
+}
+
+function renderMetricBars(){
+  const m=[
+    {label:'OEE',val:state.oee,target:state.targets.oee,color:'linear-gradient(180deg,#2168FD,#3AE4C9)'},
+    {label:'AV', val:state.av, target:state.targets.av, color:'linear-gradient(180deg,#2168FD,#60a5fa)'},
+    {label:'PF', val:state.pf, target:state.targets.pf, color:'linear-gradient(180deg,#3AE4C9,#0D9488)'},
+    {label:'Q',  val:state.q,  target:state.targets.q,  color:'linear-gradient(180deg,#7C3AED,#a78bfa)'}
+  ];
+  document.getElementById('metricBars').innerHTML=m.map(x=>`
+    <div class="metric-bar-item">
+      <div class="bar-track"><div class="bar-fill" style="height:${x.val}%;background:${x.color}"></div></div>
+      <div class="bar-pct" style="color:${x.val>=x.target?'#4ADE80':'#F87171'}">${x.val}%</div>
+      <div class="bar-label">${x.label}</div>
+    </div>`).join('');
+}
+
+// ── SUMMARY DISPLAY ───────────────────────────
+function renderSummaryDisplay(){
+  const d=summaryData;
+  const pass=d.oeeActual>=d.oeeTarget;
+  document.getElementById('dispWeek').textContent=d.week;
+  document.getElementById('dispStatusTag').className='status-tag '+(pass?'tag-pass':'tag-fail');
+  document.getElementById('dispStatusTag').textContent=pass?'ON TARGET':'NOT ACHIEVED';
+  document.getElementById('dispOeeStatus').style.color=pass?'#4ADE80':'#F87171';
+  document.getElementById('dispOeeStatus').textContent=`OEE ${pass?'achieved':'not achieve'} target (${d.oeeActual}% vs ${d.oeeTarget}%)`;
+  document.getElementById('dispBullets').innerHTML=d.bullets.map(b=>`
+    <div class="sum-bullet">
+      <div class="sum-bullet-dot ${b.pass?'dot-green':'dot-red'}"></div>
+      <span>${b.text}</span>
+    </div>`).join('');
+  // color map for improve rows
+  const colorMap={
+    green:{row:'irow-green',key:'improve-key-green'},
+    yellow:{row:'irow-yellow',key:'improve-key-yellow'},
+    red:{row:'irow-red',key:'improve-key-red'},
+    blue:{row:'irow-blue',key:'improve-key-blue'}
+  };
+  document.getElementById('dispImprove').innerHTML=d.improve.map(item=>{
+    const cm=colorMap[item.color]||colorMap.blue;
+    return `<div class="improve-row ${cm.row}">
+      <span class="improve-key ${cm.key}">${item.key} :</span>
+      <span class="improve-val">${item.val}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('weekLabel').textContent=d.week;
+  document.getElementById('perfWeekLabel').textContent=d.week;
+  document.getElementById('gaugeWeekLabel').textContent=d.week;
+}
+
+// ── EDIT MODE ─────────────────────────────────
+function toggleEditMode(){
+  editModeActive=!editModeActive;
+  const btn=document.getElementById('editModeBtn');
+  if(editModeActive){
+    btn.className='edit-mode-btn editing';
+    document.getElementById('editBtnText').textContent='Editing…';
+    document.getElementById('summaryDisplay').style.display='none';
+    document.getElementById('summaryEdit').classList.add('show');
+    populateEditForm();
+  } else {
+    btn.className='edit-mode-btn idle';
+    document.getElementById('editBtnText').textContent='Edit';
+    document.getElementById('summaryDisplay').style.display='';
+    document.getElementById('summaryEdit').classList.remove('show');
+  }
+}
+
+function populateEditForm(){
+  const d=summaryData;
+  document.getElementById('editWeek').value=d.week;
+  document.getElementById('editOeeActual').value=d.oeeActual;
+  document.getElementById('editOeeTarget').value=d.oeeTarget;
+  // bullets
+  const bl=document.getElementById('bulletEditList');bl.innerHTML='';
+  d.bullets.forEach((b,i)=>{
+    const row=document.createElement('div');row.className='bullet-edit-row';
+    row.innerHTML=`
+      <select class="bullet-status-select" id="bstat_${i}">
+        <option value="pass" ${b.pass?'selected':''}>✓ Achieved</option>
+        <option value="fail" ${!b.pass?'selected':''}>✗ Not Achieved</option>
+      </select>
+      <input class="edit-input-text" id="btxt_${i}" value="${b.text}">
+      <button class="remove-improve-btn" onclick="removeBullet(${i})">×</button>`;
+    bl.appendChild(row);
+  });
+  // improve
+  const il=document.getElementById('improveEditList');il.innerHTML='';
+  d.improve.forEach((item,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:grid;grid-template-columns:100px 90px 1fr 32px;gap:8px;align-items:center';
+    row.innerHTML=`
+      <input class="improve-edit-key" id="ikey_${i}" value="${item.key}">
+      <select class="improve-edit-color" id="icol_${i}">
+        <option value="green"  ${item.color==='green' ?'selected':''}>🟢 Met</option>
+        <option value="yellow" ${item.color==='yellow'?'selected':''}>🟡 ±5%</option>
+        <option value="red"    ${item.color==='red'   ?'selected':''}>🔴 &gt;5%</option>
+        <option value="blue"   ${item.color==='blue'  ?'selected':''}>🔵 Info</option>
+      </select>
+      <input class="improve-edit-val" id="ival_${i}" value="${item.val}">
+      <button class="remove-improve-btn" onclick="removeImprove(${i})">×</button>`;
+    il.appendChild(row);
+  });
+}
+
+function addBullet(){summaryData.bullets.push({pass:false,text:'New bullet point'});populateEditForm();}
+function removeBullet(i){summaryData.bullets.splice(i,1);populateEditForm();}
+function addImproveRow(){summaryData.improve.push({key:'Topic',color:'blue',val:'Action / description'});populateEditForm();}
+function removeImprove(i){summaryData.improve.splice(i,1);populateEditForm();}
+
+function applyEdit(){
+  const d=summaryData;
+  d.week=document.getElementById('editWeek').value.trim()||d.week;
+  d.oeeActual=parseFloat(document.getElementById('editOeeActual').value)||d.oeeActual;
+  d.oeeTarget=parseFloat(document.getElementById('editOeeTarget').value)||d.oeeTarget;
+  d.bullets=d.bullets.map((b,i)=>({
+    pass:document.getElementById('bstat_'+i)?.value==='pass',
+    text:document.getElementById('btxt_'+i)?.value||b.text
+  }));
+  d.improve=d.improve.map((item,i)=>({
+    key:document.getElementById('ikey_'+i)?.value||item.key,
+    color:document.getElementById('icol_'+i)?.value||item.color,
+    val:document.getElementById('ival_'+i)?.value||item.val
+  }));
+  editModeActive=false;
+  const btn=document.getElementById('editModeBtn');
+  btn.className='edit-mode-btn idle';
+  document.getElementById('editBtnText').textContent='Edit';
+  document.getElementById('summaryDisplay').style.display='';
+  document.getElementById('summaryEdit').classList.remove('show');
+  renderSummaryDisplay();
+  btn.innerHTML='<span style="color:#4ADE80;font-weight:800">✓ Saved</span>';
+  btn.style.cssText='background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:#4ADE80;position:absolute;top:18px;right:18px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:Manrope,sans-serif';
+  setTimeout(()=>{
+    btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span id="editBtnText">Edit</span>`;
+    btn.className='edit-mode-btn idle';btn.style.cssText='';
+  },1600);
+}
+
+function cancelEdit(){
+  editModeActive=false;
+  document.getElementById('editModeBtn').className='edit-mode-btn idle';
+  document.getElementById('editBtnText').textContent='Edit';
+  document.getElementById('summaryDisplay').style.display='';
+  document.getElementById('summaryEdit').classList.remove('show');
+}
+
+// ── PERF TABLE ────────────────────────────────
+function renderPerfTable(){
+  document.getElementById('perfTableBody').innerHTML=perfLines.map((l,ri)=>{
+    const ev=evidenceStore['p_'+ri];
+    const oc=l.oee>=95?'oee-good':l.oee>=90?'oee-warn':'oee-bad';
+    const evBtn=`<span class="ev-indicator ${ev?'ev-filled':''}" onclick="openModal('p_${ri}','${l.name}','OEE: ${l.oee}%')">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${ev?'#FBBF24':'#555'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>`;
+    return `<tr>
+      <td style="color:#fff;font-size:15px">${l.name}</td>
+      <td class="col-oee"><span class="oee-cell ${oc}">${l.oee}%</span></td>
+      <td class="${bandClass(l.q,99.7)==='band-green'?'':''}">
+        <div class="cell-band ${bandClass(l.q,99.7)}">${l.q}%</div></td>
+      <td><div class="cell-band ${bandClass(l.pf,99.3)}">${l.pf}%</div></td>
+      <td><div class="cell-band ${bandClass(l.av,96.0)}">${l.av}%</div></td>
+      <td style="color:${l.dt>5?'#F87171':'#FBBF24'};font-weight:700;padding:11px 14px">${l.dt}%</td>
+      <td style="color:#CBD5E1;padding:11px 14px">${l.idle}%</td>
+      <td style="color:#CBD5E1;padding:11px 14px">${l.sw}%</td>
+      <td style="color:#CBD5E1;padding:11px 14px">${l.input.toLocaleString()}</td>
+      <td style="color:#CBD5E1;padding:11px 14px">${l.dgr.toLocaleString()}</td>
+      <td style="text-align:center;padding:11px 14px">${evBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── TREND TABLE ───────────────────────────────
+function renderTrendTable(){
+  document.getElementById('trendBody').innerHTML=trendData.map((row,ri)=>{
+    const isOEE=ri===3;
+    const cells=row.vals.map((v,ci)=>{
+      const isFW=ci===FW03_COL;
+      const bc=bandClass(v,row.target);
+      const ev=evidenceStore[`${ri}_${ci}`];
+      const showEv=needsEvidence(v,row.target);
+      const evBtn=showEv?`<span class="ev-indicator ${ev?'ev-filled':''}" onclick="openModal('${ri}_${ci}','${row.key} — ${months[ci]}','${v}% vs ${row.target}%')">
+        <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="${ev?'#FBBF24':'rgba(255,255,255,.3)'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>`:'';
+      return `<td class="${isFW?'col-fw03':''}" onclick="makeEditable(this,${ri},${ci})">
+        <div class="cell-band ${bc}">${v}%${evBtn}</div></td>`;
+    }).join('');
+    return `<tr class="${isOEE?'oee-row':''}">
+      <td>${row.key}</td>
+      <td>${row.sub}</td>
+      <td class="cell-target">${row.target}%</td>
+      ${cells}</tr>`;
+  }).join('');
+}
+
+// ── INLINE EDITING ────────────────────────────
+function makeEditable(td,ri,ci){
+  if(td.querySelector('input'))return;
+  const cur=trendData[ri].vals[ci];
+  td.innerHTML=`<input class="edit-input" type="number" step="0.1" min="0" max="100" value="${cur}"
+    onblur="commitEdit(this,${ri},${ci})"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')renderTrendTable()">`;
+  td.querySelector('input').focus();td.querySelector('input').select();
+}
+function commitEdit(input,ri,ci){
+  const nv=parseFloat(input.value);
+  if(!isNaN(nv)&&nv>=0&&nv<=100){
+    trendData[ri].vals[ci]=Math.round(nv*10)/10;
+    if(ri<3) for(let c=0;c<12;c++) trendData[3].vals[c]=Math.round((trendData[0].vals[c]/100*trendData[1].vals[c]/100*trendData[2].vals[c]/100)*1000)/10;
+    state.av=trendData[0].vals[FW03_COL];state.pf=trendData[1].vals[FW03_COL];
+    state.q=trendData[2].vals[FW03_COL];state.oee=trendData[3].vals[FW03_COL];
+    document.getElementById('hero-oee').textContent=state.oee+'%';
+    document.getElementById('hero-av').textContent=state.av+'%';
+    document.getElementById('hero-pf').textContent=state.pf+'%';
+    document.getElementById('hero-q').textContent=state.q+'%';
+    drawGauge(state.oee);document.getElementById('gaugePct').textContent=state.oee+'%';
+    renderMetricBars();
+  }
+  renderTrendTable();renderPerfTable();
+}
+
+// ── EVIDENCE ──────────────────────────────────
+let pendingFiles=[];
+function openModal(key,label,value){
+  currentEvidenceKey=key;
+  document.getElementById('modalSubtitle').textContent=`Cell: ${label}  |  Value: ${value}`;
+  const ex=evidenceStore[key]||{};
+  document.getElementById('evidenceNote').value=ex.note||'';
+  pendingFiles=ex.files?[...ex.files]:[];
+  renderFileList();
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');currentEvidenceKey=null;pendingFiles=[];}
+function handleFiles(files){Array.from(files).forEach(f=>pendingFiles.push({name:f.name}));renderFileList();}
+function renderFileList(){
+  document.getElementById('evidenceFileList').innerHTML=pendingFiles.map((f,i)=>`
+    <div class="evidence-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+      <span class="evidence-name">${f.name}</span>
+      <span class="evidence-remove" onclick="removeFile(${i})">Remove</span>
+    </div>`).join('');
+}
+function removeFile(i){pendingFiles.splice(i,1);renderFileList();}
+function saveEvidence(){
+  if(!currentEvidenceKey)return;
+  evidenceStore[currentEvidenceKey]={note:document.getElementById('evidenceNote').value,files:[...pendingFiles]};
+  closeModal();renderTrendTable();renderPerfTable();
+}
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');handleFiles(e.dataTransfer.files)});
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+
+function promptWeek(){
+  const w=prompt('Enter week label:',summaryData.week);
+  if(w&&w.trim()){summaryData.week=w.trim().toUpperCase();renderSummaryDisplay();}
+}
+function exportData(){
+  const rows=[['Key Factor','Sub Factor','Target',...months]];
+  trendData.forEach(r=>rows.push([r.key,r.sub,r.target+'%',...r.vals.map(v=>v+'%')]));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));
+  a.download=`HDA_OEE_${summaryData.week}.csv`;a.click();
+}
+
+// ── INIT ──────────────────────────────────────
+function init(){
+  drawGauge(state.oee);renderMetricBars();renderPerfTable();renderTrendTable();renderSummaryDisplay();
+  const io=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('v')}),{threshold:0.05});
+  document.querySelectorAll('.f').forEach(el=>io.observe(el));
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
