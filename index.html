@@ -1,1036 +1,319 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HDA OEE Overview</title>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Quality Hero Memory Match</title>
 <style>
-:root {
-  --bg:#0D0D0F;--bg-card:#131314;--card:#1A1A1C;--card-hi:#1f1f21;
-  --border:#2a2a2e;--border-hi:#3A3A3F;--fg:#FAFAFA;--muted:#AFB5BE;--dim:#606068;
-  --green:#4ADE80;--red:#F87171;--yellow:#FBBF24;--blue:#2168FD;--blue-light:#93C5FD;--cyan:#3AE4C9;
-  --grad:linear-gradient(90deg,#2168FD 0%,#3AE4C9 100%);
-  --grad-d:linear-gradient(135deg,#2168FD 0%,#3AE4C9 100%);
-  --sidebar-w:200px;
+:root{
+  --navy:#07172e;--panel:#102846;--blue:#1479ff;
+  --cyan:#43e5e5;--gold:#ffd166;--white:#f4f8ff;
+  --muted:#a8bfd9;--green:#39e6a3;--red:#ff6174;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;font-family:'Manrope',sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;overflow:hidden}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
-.gt{background:var(--grad-d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-
-.shell{display:flex;height:100vh;width:100vw;overflow:hidden}
-
-/* SIDEBAR */
-.sidebar{width:var(--sidebar-w);background:#0A0A0C;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:10}
-.sidebar-brand{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
-.brand-icon{width:36px;height:36px;border-radius:9px;background:var(--grad);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
-.brand-title{font-size:14px;font-weight:800;color:#fff;letter-spacing:-.2px}
-.brand-sub{font-size:11px;color:var(--dim);font-weight:600;margin-top:3px}
-.sidebar-nav{padding:14px 10px;flex:1;overflow-y:auto}
-.nav-section{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dim);padding:0 8px;margin:14px 0 7px}
-.nav-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;margin-bottom:3px}
-.nav-item:hover{background:rgba(255,255,255,.05);color:var(--fg)}
-.nav-item.active{background:rgba(33,104,253,.2);color:#fff;border:1px solid rgba(33,104,253,.35)}
-.sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--dim);font-weight:600;line-height:1.6}
-
-/* MAIN */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-
-/* TOPBAR */
-.topbar{height:66px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:12px;flex-shrink:0;background:#0A0A0C}
-.topbar-title{flex:1}
-.topbar-title .ttl{font-size:22px;font-weight:900;letter-spacing:-.5px;color:#fff}
-.topbar-title .tsub{font-size:11px;color:var(--dim);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
-.topbar-chips{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:7px 14px;border-radius:20px;cursor:pointer;transition:all .15s;white-space:nowrap}
-.chip-date{background:rgba(33,104,253,.12);border:1px solid rgba(33,104,253,.28);color:var(--blue-light)}
-.chip-date:hover{background:rgba(33,104,253,.2)}
-.chip-line{background:rgba(58,228,201,.08);border:1px solid rgba(58,228,201,.22);color:var(--cyan)}
-.chip-live{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);color:var(--green)}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.4)}70%{box-shadow:0 0 0 6px rgba(74,222,128,0)}}
-.chip-fw{background:rgba(33,104,253,.12);border:1px solid rgba(33,104,253,.28);color:var(--blue-light)}
-.chip-updated{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);font-size:12px}
-.chip-updated .time{font-size:15px;font-weight:900;color:#fff}
-.btn-export{background:rgba(33,104,253,.1);border:1px solid rgba(33,104,253,.25);color:var(--blue-light);font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;padding:8px 16px;border-radius:10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
-.btn-export:hover{background:rgba(33,104,253,.2)}
-
-/* CONTENT */
-.content{flex:1;overflow-y:auto;padding:20px 24px 48px}
-.page{display:none}.page.active{display:block}
-
-/* HERO METRICS */
-.hero-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.hero-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:22px 20px 18px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s}
-.hc-top-bar{position:absolute;top:0;left:0;right:0;height:2px}
-.hc-oee .hc-top-bar{background:var(--grad)}
-.hc-av .hc-top-bar{background:linear-gradient(90deg,#2168FD,#60a5fa)}
-.hc-pf .hc-top-bar{background:linear-gradient(90deg,#3AE4C9,#0D9488)}
-.hc-q .hc-top-bar{background:linear-gradient(90deg,#7C3AED,#a78bfa)}
-.hero-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 16px 16px}
-.hc-oee::before{background:var(--grad)}.hc-av::before{background:linear-gradient(90deg,#2168FD,#60a5fa)}
-.hc-pf::before{background:linear-gradient(90deg,#3AE4C9,#0D9488)}.hc-q::before{background:linear-gradient(90deg,#7C3AED,#a78bfa)}
-.hero-card:hover{background:var(--card-hi);transform:translateY(-2px);border-color:var(--border-hi)}
-.hc-label{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
-.hc-value{font-size:52px;font-weight:900;letter-spacing:-2.5px;line-height:1;margin-bottom:4px}
-.hc-target{font-size:13px;font-weight:600;color:var(--dim)}
-.hc-delta{font-size:12px;font-weight:700;margin-top:10px;display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:10px}
-.delta-neg{background:rgba(248,113,113,.12);color:#F87171}
-.delta-pos{background:rgba(74,222,128,.1);color:var(--green)}
-
-/* MID GRID — wider gauge */
-.mid-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-
-/* GAUGE */
-.gauge-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden}
-.gauge-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--grad);border-radius:0 2px 2px 0}
-.card-title{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
-.gauge-inner{display:flex;align-items:center;gap:20px}
-.gauge-wrap{position:relative;flex-shrink:0}
-.gauge-center{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);text-align:center}
-.gauge-pct{font-size:42px;font-weight:900;letter-spacing:-2px}
-.gauge-sub{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
-.mini-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex:1}
-.mini-bar-item{display:flex;flex-direction:column;align-items:center;gap:6px}
-.mini-track{width:38px;height:100px;background:rgba(255,255,255,.04);border-radius:7px;position:relative;overflow:hidden;border:1px solid var(--border)}
-.mini-fill{position:absolute;bottom:0;left:0;right:0;border-radius:7px;transition:height .8s cubic-bezier(.4,0,.2,1)}
-.mini-pct{font-size:13px;font-weight:800}
-.mini-label{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase}
-
-/* SUMMARY */
-.summary-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden}
-.edit-btn{position:absolute;top:16px;right:16px;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:6px 14px;border-radius:16px;cursor:pointer;transition:all .15s;border:1px solid rgba(33,104,253,.25);background:rgba(33,104,253,.1);color:var(--blue-light);font-family:'Manrope',sans-serif}
-.edit-btn:hover{background:rgba(33,104,253,.2)}
-.edit-btn.editing{background:rgba(58,228,201,.1);border-color:rgba(58,228,201,.3);color:var(--cyan)}
-.sum-week{font-size:22px;font-weight:900;letter-spacing:-.4px;margin-bottom:8px}
-.sum-week span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.status-tag{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:5px 14px;border-radius:16px;display:inline-block;margin-bottom:12px}
-.tag-fail{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:#F87171}
-.tag-pass{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:var(--green)}
-.sum-oee-status{font-size:16px;font-weight:800;margin-bottom:14px}
-.sum-bullets{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
-.s-bullet{font-size:14px;font-weight:500;color:var(--muted);display:flex;align-items:flex-start;gap:8px;line-height:1.55}
-.s-dot{width:7px;height:7px;border-radius:50%;margin-top:6px;flex-shrink:0}
-.dot-r{background:#F87171}.dot-g{background:#4ADE80}
-.improve-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:9px}
-.improve-list{display:flex;flex-direction:column;gap:7px}
-.imp-row{font-size:13px;font-weight:500;display:flex;align-items:flex-start;gap:8px;line-height:1.5;border-radius:9px;padding:10px 13px}
-.imp-green{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.18);border-left:3px solid #4ADE80}
-.imp-yellow{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-left:3px solid #FBBF24}
-.imp-red{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-left:3px solid #F87171}
-.imp-blue{background:rgba(33,104,253,.05);border:1px solid rgba(33,104,253,.12);border-left:3px solid #2168FD}
-.imp-key{font-weight:800;flex-shrink:0}
-.imp-key-g{color:#4ADE80}.imp-key-y{color:#FBBF24}.imp-key-r{color:#F87171}.imp-key-b{color:var(--blue-light)}
-.imp-val{color:var(--muted)}
-.sum-edit{display:none;flex-direction:column;gap:13px}
-.sum-edit.show{display:flex}
-.edit-row{display:flex;flex-direction:column;gap:5px}
-.edit-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
-.edit-inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;padding:10px 13px;outline:none;transition:border-color .2s}
-.edit-inp:focus{border-color:rgba(33,104,253,.45);background:rgba(33,104,253,.04)}
-.edit-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.edit-section{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue-light);border-top:1px solid var(--border);padding-top:11px;margin-top:2px}
-.bullet-edit-row{display:grid;grid-template-columns:110px 1fr 30px;gap:8px;align-items:center}
-.sel-inp{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--fg);font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;padding:8px 10px;border-radius:9px;outline:none;cursor:pointer;width:100%}
-.imp-edit-row{display:grid;grid-template-columns:90px 80px 1fr 30px;gap:8px;align-items:center}
-.imp-key-inp{background:rgba(33,104,253,.08);border:1px solid rgba(33,104,253,.2);color:var(--blue-light);font-family:'Manrope',sans-serif;font-size:12px;font-weight:800;padding:8px 10px;border-radius:9px;outline:none;width:100%}
-.add-row-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--blue-light);background:rgba(33,104,253,.06);border:1px dashed rgba(33,104,253,.25);border-radius:8px;padding:7px 13px;cursor:pointer;font-family:'Manrope',sans-serif;margin-top:2px}
-.add-row-btn:hover{background:rgba(33,104,253,.12)}
-.rm-btn{width:28px;height:28px;border-radius:50%;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:#F87171;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Manrope',sans-serif}
-.rm-btn:hover{background:rgba(248,113,113,.18)}
-.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
-.btn-cancel{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;padding:9px 20px;border-radius:9px;cursor:pointer}
-.btn-save{background:var(--grad);border:none;color:#fff;font-family:'Manrope',sans-serif;font-size:13px;font-weight:800;padding:9px 20px;border-radius:9px;cursor:pointer}
-
-/* SECTION */
-.sec-hdr{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-.sec-lbl{font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
-.sec-badge{font-size:12px;font-weight:800;color:var(--cyan);background:rgba(58,228,201,.08);border:1px solid rgba(58,228,201,.18);padding:4px 12px;border-radius:10px}
-.hint{font-size:11px;color:var(--dim);font-weight:600}
-.legend{display:flex;gap:12px;flex-wrap:wrap;margin-left:auto}
-.leg-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
-.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-
-/* PERF TABLE */
-.table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px}
-.perf-tbl{width:100%;border-collapse:collapse}
-.perf-tbl th{background:rgba(33,104,253,.1);font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff;padding:14px 16px;text-align:center;border-bottom:1px solid var(--border)}
-.perf-tbl th:first-child{text-align:left}
-.perf-tbl th.th-oee{background:linear-gradient(180deg,rgba(33,104,253,.35),rgba(58,228,201,.18));color:#fff;font-size:13px;font-weight:900;border-left:2px solid rgba(33,104,253,.5);border-right:2px solid rgba(58,228,201,.3)}
-.perf-tbl td{padding:12px 16px;font-size:16px;font-weight:700;text-align:center;border-bottom:1px solid rgba(42,42,42,.5);color:#E2E8F0;transition:background .15s}
-.perf-tbl td:first-child{text-align:left;font-weight:800;color:#fff;font-size:17px}
-.perf-tbl tr:last-child td{border-bottom:none}
-.perf-tbl tr:hover td{background:var(--card-hi)}
-.perf-tbl td.td-oee{background:rgba(33,104,253,.07);border-left:2px solid rgba(33,104,253,.35);border-right:2px solid rgba(58,228,201,.2)}
-.oee-badge{font-size:16px;font-weight:900;border-radius:10px;padding:6px 14px;display:inline-block;cursor:pointer}
-.oee-good{background:rgba(74,222,128,.15);color:#4ADE80;border:1px solid rgba(74,222,128,.3)}
-.oee-warn{background:rgba(251,191,36,.12);color:#FBBF24;border:1px solid rgba(251,191,36,.3)}
-.oee-bad{background:rgba(248,113,113,.12);color:#F87171;border:1px solid rgba(248,113,113,.3)}
-.cell-band{display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:12px 8px;font-size:15px;font-weight:800;cursor:pointer}
-.band-green{background:rgba(74,222,128,.13);color:#4ADE80}
-.band-yellow{background:rgba(251,191,36,.12);color:#FBBF24}
-.band-red{background:rgba(248,113,113,.13);color:#F87171}
-.edit-inp-cell{background:rgba(33,104,253,.15);border:1px solid rgba(33,104,253,.4);color:#fff;font-family:'Manrope',sans-serif;font-size:14px;font-weight:800;border-radius:7px;padding:4px 8px;width:72px;text-align:center;outline:none;display:block;margin:10px auto}
-.edit-inp-cell:focus{border-color:rgba(58,228,201,.7);box-shadow:0 0 0 3px rgba(58,228,201,.1)}
-
-/* TREND TABLE */
-.trend-tbl{width:100%;border-collapse:collapse}
-.trend-tbl th{padding:13px 10px;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#fff;background:rgba(33,104,253,.1);border-bottom:1px solid var(--border);text-align:center;white-space:nowrap}
-.trend-tbl th.th-row{text-align:left;min-width:110px;font-size:12px}
-.trend-tbl th.th-target{background:rgba(33,104,253,.18);color:#93C5FD}
-.trend-tbl th.th-now{background:linear-gradient(180deg,rgba(33,104,253,.5),rgba(58,228,201,.3));color:#fff;font-size:13px;font-weight:900;border-left:3px solid #2168FD;border-right:3px solid #3AE4C9}
-.now-badge{display:inline-block;background:var(--grad);color:#fff;font-size:8px;font-weight:900;letter-spacing:.8px;padding:1px 6px;border-radius:3px;margin-left:4px;vertical-align:middle}
-.trend-tbl td{padding:0;text-align:center;border-bottom:1px solid rgba(42,42,42,.4);font-weight:800;font-size:15px;cursor:pointer}
-.trend-tbl td:first-child{text-align:left;font-weight:800;font-size:15px;color:#fff;background:rgba(255,255,255,.02);white-space:nowrap;padding:13px 10px;cursor:default}
-.trend-tbl td:nth-child(2){text-align:left;font-size:13px;font-weight:600;color:var(--muted);padding:13px 10px;cursor:default}
-.trend-tbl td:nth-child(3){padding:13px 10px}
-.trend-tbl tr:last-child td{border-bottom:none}
-.trend-tbl td.td-now{border-left:3px solid rgba(33,104,253,.5);border-right:3px solid rgba(58,228,201,.3)}
-.td-target{color:#93C5FD!important;font-weight:900!important;font-size:15px!important;padding:13px 10px!important;cursor:default!important}
-.oee-row td{background:rgba(33,104,253,.04)!important}
-.oee-row td:first-child{color:#93C5FD!important;font-size:16px!important}
-
-/* ══════════════════════════════
-   TREND PAGE — CHART SECTION
-══════════════════════════════ */
-.trend-page-header{margin-bottom:28px}
-.trend-page-title{font-size:clamp(36px,4vw,52px);font-weight:900;letter-spacing:-2px;line-height:1;margin-bottom:6px}
-.trend-page-sub{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
-
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:22px;position:relative;overflow:hidden}
-.chart-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 2px 2px 0}
-.cc-oee::before{background:var(--grad)}
-.cc-av::before{background:linear-gradient(180deg,#2168FD,#60a5fa)}
-.cc-pf::before{background:linear-gradient(180deg,#3AE4C9,#0D9488)}
-.cc-q::before{background:linear-gradient(180deg,#7C3AED,#a78bfa)}
-.chart-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.chart-card-title{font-size:13px;font-weight:800;letter-spacing:.5px;color:#fff}
-.chart-latest{display:flex;align-items:baseline;gap:6px}
-.chart-latest-val{font-size:28px;font-weight:900;letter-spacing:-1px}
-.chart-latest-label{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
-.chart-target-line{font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);color:#FBBF24}
-
-/* CANVAS */
-.chart-canvas-wrap{position:relative;width:100%;height:160px}
-canvas.trend-chart{width:100%;height:100%}
-
-/* WIDE OEE CHART */
-.chart-card-wide{grid-column:1/-1}
-.chart-canvas-wrap-wide{height:200px}
-
-/* EVIDENCE */
-.ev-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);cursor:pointer;margin-left:4px;transition:all .15s;flex-shrink:0;vertical-align:middle}
-.ev-btn:hover{background:rgba(251,191,36,.25);transform:scale(1.15)}
-.ev-filled{background:rgba(251,191,36,.25)!important;border-color:rgba(251,191,36,.6)!important}
-
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
-.overlay.open{opacity:1;pointer-events:all}
-.modal{background:var(--bg-card);border:1px solid rgba(33,104,253,.3);border-radius:20px;width:520px;max-width:95vw;padding:28px;transform:scale(.94) translateY(12px);transition:transform .25s,opacity .25s;opacity:0}
-.overlay.open .modal{transform:scale(1) translateY(0);opacity:1}
-.modal-title{font-size:18px;font-weight:900;margin-bottom:4px}
-.modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
-.modal-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
-.modal-ta{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:var(--fg);font-family:'Manrope',sans-serif;font-size:14px;padding:12px;resize:vertical;min-height:84px;outline:none}
-.modal-ta:focus{border-color:rgba(33,104,253,.5)}
-.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;position:relative;margin-top:8px}
-.drop-zone:hover,.drop-zone.drag{border-color:rgba(33,104,253,.45);background:rgba(33,104,253,.04)}
-.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.drop-text{font-size:13px;font-weight:700;color:var(--muted)}
-.drop-sub{font-size:11px;color:var(--dim);margin-top:3px}
-.ev-file-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
-.ev-file-item{display:flex;align-items:center;gap:9px;background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:8px;padding:9px 13px}
-.ev-fname{flex:1;font-size:13px;font-weight:600;color:var(--green)}
-.ev-rm{font-size:11px;color:#F87171;cursor:pointer;font-weight:700;padding:3px 8px;border-radius:5px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.18)}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-
-/* EQUIPMENT */
-.equip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:20px}
-.equip-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.equip-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
-.equip-card.ec-good::before{background:var(--green)}.equip-card.ec-warn::before{background:var(--yellow)}.equip-card.ec-bad::before{background:var(--red)}
-.equip-card:hover{background:var(--card-hi);border-color:var(--border-hi);transform:translateY(-2px)}
-.eq-name{font-size:16px;font-weight:800;color:#fff;margin-bottom:4px}
-.eq-line{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
-.eq-oee{font-size:36px;font-weight:900;letter-spacing:-1.5px;line-height:1;margin-bottom:3px}
-.eq-oee-good{color:var(--green)}.eq-oee-warn{color:var(--yellow)}.eq-oee-bad{color:var(--red)}
-.eq-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.eq-pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;background:rgba(255,255,255,.05);color:var(--muted)}
-
-.divider{height:1px;background:var(--border);margin:20px 0}
-#clockDisplay{font-size:15px;font-weight:900;color:#fff;letter-spacing:.5px}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;background:
+  radial-gradient(ellipse at top,#174777 0%,#081a32 48%,#040c19 100%);
+  color:var(--white);font-family:Arial,"Tahoma",sans-serif;
+}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+.app{max-width:1500px;margin:auto;padding:clamp(12px,2vw,28px)}
+header{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:13px}
+.logo{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;
+background:linear-gradient(135deg,var(--cyan),var(--blue));font-size:30px;
+box-shadow:0 0 28px #43e5e533}
+h1{font-size:clamp(22px,3vw,38px);margin:0;font-weight:900;letter-spacing:.5px}
+.subtitle{color:var(--muted);margin-top:5px;font-size:clamp(12px,1.4vw,16px)}
+.pill{border:1px solid #3e668e;background:#102744;padding:10px 15px;border-radius:30px;color:var(--cyan);font-weight:bold}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:linear-gradient(145deg,#173758,#0c2039);border:1px solid #28496b;border-radius:16px;padding:16px;text-align:center}
+.stat-label{font-size:clamp(11px,1.2vw,14px);color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.stat-value{font-size:clamp(24px,3vw,38px);font-weight:900;margin-top:5px}
+.stat-value.gold{color:var(--gold)}.stat-value.cyan{color:var(--cyan)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}
+.game-panel,.side-panel{background:#0b1d34d9;border:1px solid #294b6d;border-radius:22px;padding:clamp(12px,2vw,22px)}
+.board-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.board-top h2{font-size:clamp(17px,2vw,24px);margin:0}
+.hint{color:var(--muted);font-size:14px}
+.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(7px,1.2vw,14px)}
+.card{position:relative;aspect-ratio:1/1.05;border:1px solid #2d547a;border-radius:15px;
+background:linear-gradient(145deg,#17416a,#0b2543);color:white;overflow:hidden;
+display:flex;align-items:center;justify-content:center;transition:transform .16s,border-color .16s,background .16s;
+min-width:0;padding:4px}
+.card:active{transform:scale(.97)}
+.card:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.card .back{font-size:clamp(25px,4vw,48px);font-weight:900;color:#6a9dc7}
+.card .face{display:none;width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.card .symbol{font-size:clamp(26px,4.3vw,54px);line-height:1}
+.card .name{font-size:clamp(9px,1.2vw,14px);font-weight:900;line-height:1.2;text-align:center;overflow-wrap:anywhere}
+.card .kind{font-size:clamp(8px,1vw,11px);color:var(--muted);letter-spacing:1px}
+.card.flipped{background:linear-gradient(145deg,#e9f7ff,#c6e7f7);color:#102846;border-color:var(--cyan)}
+.card.flipped .back,.card.matched .back{display:none}
+.card.flipped .face,.card.matched .face{display:flex}
+.card.matched{background:linear-gradient(145deg,#c9ffea,#7af0c4);color:#063e34;border:2px solid var(--green)}
+.card.matched .kind{color:#16765a}
+.card.matched{cursor:default}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:17px}
+.btn{border:0;border-radius:12px;padding:13px 18px;font-weight:900;min-height:48px}
+.btn-primary{background:linear-gradient(135deg,#39e5dc,#1683ff);color:#06162a;box-shadow:0 6px 20px #1479ff33}
+.btn-secondary{background:#173452;border:1px solid #3a5c7d;color:white}
+.btn-gold{background:var(--gold);color:#1a2636}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.side-panel h3{margin:0 0 14px;font-size:19px}
+.mission{border:1px solid #294c6e;border-radius:14px;padding:13px;margin-bottom:10px;background:#102843}
+.mission strong{display:block;margin-bottom:5px}
+.mission p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.progress{height:9px;background:#203b58;border-radius:10px;overflow:hidden;margin:13px 0}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .2s}
+.tip{font-size:13px;color:var(--muted);line-height:1.65}
+.footer{text-align:center;color:#7793b0;font-size:12px;margin:18px 0 4px}
+.overlay{position:fixed;inset:0;background:#020a15eF;z-index:10;display:flex;align-items:center;justify-content:center;padding:18px}
+.dialog{width:min(560px,100%);background:linear-gradient(145deg,#163858,#09192d);
+border:1px solid #3e7299;border-radius:25px;padding:clamp(22px,4vw,38px);text-align:center;
+box-shadow:0 20px 80px #0008}
+.dialog-icon{font-size:62px}
+.dialog h2{font-size:clamp(26px,4vw,40px);margin:10px 0;color:var(--gold)}
+.dialog p{color:#c1d4e9;line-height:1.7}
+.dialog .btn{width:100%;margin-top:12px;font-size:17px}
+.name-input{width:100%;padding:14px;border-radius:12px;border:1px solid #456b8c;background:#06162a;color:white;font-size:18px;margin:12px 0}
+.hidden{display:none!important}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.side-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.side-panel h3{grid-column:1/-1}.mission{margin:0}.tip{grid-column:1/-1}}
+@media(max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}.board{grid-template-columns:repeat(3,minmax(0,1fr))}.side-panel{display:block}.mission{margin-bottom:8px}.pill{font-size:12px}.card{aspect-ratio:1/1.12}}
+@media(min-width:1200px){.layout{grid-template-columns:minmax(0,1fr) 320px}.card{aspect-ratio:1/0.95}}
 </style>
 </head>
 <body>
-<div class="shell">
-
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      </div>
-      <div class="brand-title">HDA Assembly</div>
-      <div class="brand-sub">OEE Executive Dashboard</div>
-    </div>
-    <div class="sidebar-nav">
-      <div class="nav-section">Main</div>
-      <div class="nav-item active" onclick="switchPage('overview',this)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Overview
-      </div>
-      <div class="nav-item" onclick="switchPage('equipment',this)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        Equipment
-      </div>
-      <div class="nav-section">Analysis</div>
-      <div class="nav-item" onclick="switchPage('trend',this)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Trend
-      </div>
-    </div>
-    <div class="sidebar-footer">
-      WDC · HDA Assembly<br>
-      <span style="color:var(--cyan);font-weight:700;font-size:14px" id="sidebarWeek">FW03</span>
-    </div>
+<div class="app">
+<header>
+  <div class="brand">
+    <div class="logo">🛡️</div>
+    <div><h1>QUALITY HERO</h1><div class="subtitle">MEMORY MATCH · QUALITY MONTH CHALLENGE</div></div>
   </div>
+  <div class="pill">★ FIND THE DEFECT PAIRS</div>
+</header>
 
-  <!-- MAIN -->
-  <div class="main">
-    <div class="topbar">
-      <div class="topbar-title">
-        <div class="ttl">Overall Equipment Effectiveness</div>
-        <div class="tsub">Executive Dashboard &nbsp;·&nbsp; HDA Assembly Line</div>
-      </div>
-      <div class="topbar-chips">
-        <div class="chip chip-date" onclick="promptDate()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span id="dateChip">08 Jul 2026</span>
-        </div>
-        <div class="chip chip-line">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          All Lines
-        </div>
-        <div class="chip chip-live"><div class="live-dot"></div> LIVE</div>
-        <div class="chip chip-fw" onclick="promptWeek()">
-          # <span id="fwChip">FW03</span>
-        </div>
-        <div class="chip chip-updated">
-          Last Update: <span class="time" id="clockDisplay">14:35</span>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer" onclick="refreshClock()"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        </div>
-        <button class="btn-export" onclick="exportCSV()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export CSV
-        </button>
-      </div>
+<section class="stats">
+  <div class="stat"><div class="stat-label">Score</div><div id="score" class="stat-value gold">0</div></div>
+  <div class="stat"><div class="stat-label">Time Left</div><div id="time" class="stat-value cyan">90</div></div>
+  <div class="stat"><div class="stat-label">Matched</div><div id="matched" class="stat-value">0 / 5</div></div>
+  <div class="stat"><div class="stat-label">Attempts</div><div id="attempts" class="stat-value">0</div></div>
+</section>
+
+<div class="layout">
+  <main class="game-panel">
+    <div class="board-top">
+      <h2>🔎 Defect Memory Board</h2>
+      <div id="status" class="hint">พร้อมเริ่มภารกิจ</div>
     </div>
-
-    <div class="content">
-
-      <!-- ══ OVERVIEW ══ -->
-      <div class="page active" id="page-overview">
-        <div class="hero-grid">
-          <div class="hero-card hc-oee">
-            <div class="hc-top-bar"></div>
-            <div class="hc-label">OEE</div>
-            <div class="hc-value gt" id="h-oee">92.2%</div>
-            <div class="hc-target">Target: 95.0%</div>
-            <div class="hc-delta delta-neg" id="hd-oee">▼ −2.8% vs target</div>
-          </div>
-          <div class="hero-card hc-av">
-            <div class="hc-top-bar"></div>
-            <div class="hc-label">Availability (AV)</div>
-            <div class="hc-value" id="h-av" style="color:#60a5fa">92.8%</div>
-            <div class="hc-target">Target: 96.0%</div>
-            <div class="hc-delta delta-neg" id="hd-av">▼ −3.2% vs target</div>
-          </div>
-          <div class="hero-card hc-pf">
-            <div class="hc-top-bar"></div>
-            <div class="hc-label">Performance (PF)</div>
-            <div class="hc-value" id="h-pf" style="color:#3AE4C9">99.6%</div>
-            <div class="hc-target">Target: 99.3%</div>
-            <div class="hc-delta delta-pos" id="hd-pf">▲ +0.3% vs target</div>
-          </div>
-          <div class="hero-card hc-q">
-            <div class="hc-top-bar"></div>
-            <div class="hc-label">Quality (Q)</div>
-            <div class="hc-value" id="h-q" style="color:#a78bfa">99.7%</div>
-            <div class="hc-target">Target: 99.7%</div>
-            <div class="hc-delta delta-pos" id="hd-q">▲ On target</div>
-          </div>
-        </div>
-
-        <div class="mid-grid">
-          <div class="gauge-card">
-            <div class="card-title">OEE Gauge — <span style="color:var(--cyan);font-weight:900" id="gaugeWk">FW03</span></div>
-            <div class="gauge-inner">
-              <div class="gauge-wrap">
-                <canvas id="gaugeCanvas" width="320" height="195"></canvas>
-                <div class="gauge-center">
-                  <div class="gauge-pct gt" id="gaugePct">92.2%</div>
-                  <div class="gauge-sub">OEE Score</div>
-                </div>
-              </div>
-              <div class="mini-bars" id="miniBars"></div>
-            </div>
-          </div>
-          <div class="summary-card">
-            <button class="edit-btn" id="editBtn" onclick="toggleEdit()">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              <span id="editBtnTxt">Edit</span>
-            </button>
-            <div id="sumDisplay"></div>
-            <div class="sum-edit" id="sumEdit">
-              <div class="edit-row"><div class="edit-lbl">Week Label</div><input class="edit-inp" id="eWeek"></div>
-              <div class="edit-2col">
-                <div class="edit-row"><div class="edit-lbl">OEE Actual (%)</div><input class="edit-inp" id="eOeeA" type="number" step="0.1"></div>
-                <div class="edit-row"><div class="edit-lbl">OEE Target (%)</div><input class="edit-inp" id="eOeeT" type="number" step="0.1"></div>
-              </div>
-              <div class="edit-section">Bullet Points</div>
-              <div id="bulletEditList" style="display:flex;flex-direction:column;gap:8px"></div>
-              <button class="add-row-btn" onclick="addBullet()">+ Add bullet</button>
-              <div class="edit-section">Improvement Plan</div>
-              <div id="impEditList" style="display:flex;flex-direction:column;gap:8px"></div>
-              <button class="add-row-btn" onclick="addImp()">+ Add item</button>
-              <div class="form-actions">
-                <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
-                <button class="btn-save" onclick="applyEdit()">Apply</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="sec-hdr">
-          <div class="sec-lbl">Weekly Performance by Line</div>
-          <div class="sec-badge" id="perfWkBadge">FW03</div>
-          <span class="hint">(Click any cell to edit)</span>
-        </div>
-        <div class="table-wrap">
-          <table class="perf-tbl">
-            <thead>
-              <tr>
-                <th style="text-align:left">Line</th>
-                <th class="th-oee">OEE</th>
-                <th>Quality</th><th>Performance</th><th>Availability</th>
-                <th>DT</th><th>Idle</th><th>Switching</th><th>Input Loading</th><th>DGR</th><th>Evidence</th>
-              </tr>
-            </thead>
-            <tbody id="perfBody"></tbody>
-          </table>
-        </div>
-
-        <div class="sec-hdr">
-          <div class="sec-lbl">Monthly Trend</div>
-          <span class="hint">(Click to edit)</span>
-          <div class="legend">
-            <div class="leg-item"><div class="leg-dot" style="background:#4ADE80"></div><span style="color:#4ADE80">Meet</span></div>
-            <div class="leg-item"><div class="leg-dot" style="background:#FBBF24"></div><span style="color:#FBBF24">Within −5%</span></div>
-            <div class="leg-item"><div class="leg-dot" style="background:#F87171"></div><span style="color:#F87171">Miss &gt;5%</span></div>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table class="trend-tbl">
-            <thead>
-              <tr>
-                <th class="th-row">Key Factor</th><th class="th-row">Sub Factor</th><th class="th-target">Target</th>
-                <th>Oct</th><th>Nov</th><th>Dec</th><th>Jan</th><th>Feb</th>
-                <th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th>
-                <th>FW02</th><th class="th-now">FW03 <span class="now-badge">NOW</span></th>
-              </tr>
-            </thead>
-            <tbody id="trendBody"></tbody>
-          </table>
-        </div>
-        <div class="divider"></div>
-        <div style="text-align:center;font-size:11px;color:var(--dim);letter-spacing:1px;text-transform:uppercase">HDA OEE Dashboard · Western Digital</div>
-      </div>
-
-      <!-- ══ EQUIPMENT ══ -->
-      <div class="page" id="page-equipment">
-        <div class="sec-hdr" style="margin-bottom:16px">
-          <div class="sec-lbl">Equipment Overview</div>
-          <div class="sec-badge" id="equipWkBadge">FW03</div>
-        </div>
-        <div class="equip-grid" id="equipGrid"></div>
-      </div>
-
-      <!-- ══ TREND PAGE ══ -->
-      <div class="page" id="page-trend">
-
-        <!-- HEADER -->
-        <div class="trend-page-header">
-          <div class="trend-page-title gt">HDA OEE Overview</div>
-          <div class="trend-page-sub">Last data updated: 2026-06-25 &nbsp;·&nbsp; HDA Assembly</div>
-        </div>
-
-        <!-- CHARTS GRID -->
-        <div class="charts-grid">
-          <!-- OEE wide chart -->
-          <div class="chart-card chart-card-wide cc-oee">
-            <div class="chart-card-header">
-              <div>
-                <div class="chart-card-title">OEE — Overall Equipment Effectiveness</div>
-                <div style="font-size:11px;color:var(--dim);font-weight:600;margin-top:3px">AV × PF × Q · Target: 95%</div>
-              </div>
-              <div class="chart-latest">
-                <div class="chart-latest-val gt" id="clv-oee">92.2%</div>
-                <div class="chart-latest-label">Current</div>
-                <div class="chart-target-line">Target 95%</div>
-              </div>
-            </div>
-            <div class="chart-canvas-wrap chart-canvas-wrap-wide">
-              <canvas id="chart-oee" class="trend-chart"></canvas>
-            </div>
-          </div>
-
-          <!-- AV chart -->
-          <div class="chart-card cc-av">
-            <div class="chart-card-header">
-              <div>
-                <div class="chart-card-title">Availability (AV)</div>
-                <div style="font-size:11px;color:var(--dim);font-weight:600;margin-top:3px">Target: 96%</div>
-              </div>
-              <div class="chart-latest">
-                <div class="chart-latest-val" style="color:#60a5fa" id="clv-av">92.8%</div>
-                <div class="chart-latest-label">Current</div>
-              </div>
-            </div>
-            <div class="chart-canvas-wrap">
-              <canvas id="chart-av" class="trend-chart"></canvas>
-            </div>
-          </div>
-
-          <!-- PF chart -->
-          <div class="chart-card cc-pf">
-            <div class="chart-card-header">
-              <div>
-                <div class="chart-card-title">Performance (PF)</div>
-                <div style="font-size:11px;color:var(--dim);font-weight:600;margin-top:3px">Target: 99.3%</div>
-              </div>
-              <div class="chart-latest">
-                <div class="chart-latest-val" style="color:#3AE4C9" id="clv-pf">99.6%</div>
-                <div class="chart-latest-label">Current</div>
-              </div>
-            </div>
-            <div class="chart-canvas-wrap">
-              <canvas id="chart-pf" class="trend-chart"></canvas>
-            </div>
-          </div>
-
-          <!-- Quality chart -->
-          <div class="chart-card cc-q" style="grid-column:1/-1">
-            <div class="chart-card-header">
-              <div>
-                <div class="chart-card-title">Quality (Q) — Yield</div>
-                <div style="font-size:11px;color:var(--dim);font-weight:600;margin-top:3px">Target: 99.7%</div>
-              </div>
-              <div class="chart-latest">
-                <div class="chart-latest-val" style="color:#a78bfa" id="clv-q">99.7%</div>
-                <div class="chart-latest-label">Current</div>
-              </div>
-            </div>
-            <div class="chart-canvas-wrap">
-              <canvas id="chart-q" class="trend-chart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- TREND TABLE -->
-        <div class="sec-hdr">
-          <div class="sec-lbl">Trend Analysis — Data Table</div>
-          <span class="hint">(Click cell to edit)</span>
-          <div class="legend">
-            <div class="leg-item"><div class="leg-dot" style="background:#4ADE80"></div><span style="color:#4ADE80">Meet</span></div>
-            <div class="leg-item"><div class="leg-dot" style="background:#FBBF24"></div><span style="color:#FBBF24">±5%</span></div>
-            <div class="leg-item"><div class="leg-dot" style="background:#F87171"></div><span style="color:#F87171">Miss</span></div>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table class="trend-tbl">
-            <thead>
-              <tr>
-                <th class="th-row">Key Factor</th><th class="th-row">Sub Factor</th><th class="th-target">Target</th>
-                <th>Oct</th><th>Nov</th><th>Dec</th><th>Jan</th><th>Feb</th>
-                <th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th>
-                <th>FW02</th><th class="th-now">FW03 <span class="now-badge">NOW</span></th>
-              </tr>
-            </thead>
-            <tbody id="trendBody2"></tbody>
-          </table>
-        </div>
-      </div>
-
+    <div id="board" class="board" aria-label="Memory card board"></div>
+    <div class="progress"><div id="progress"></div></div>
+    <div class="controls">
+      <button id="startBtn" class="btn btn-primary">▶ เริ่มเกมใหม่</button>
+      <button id="pauseBtn" class="btn btn-secondary" disabled>Ⅱ พักเกม</button>
+      <button id="soundBtn" class="btn btn-secondary">🔊 เสียง: เปิด</button>
     </div>
+  </main>
+  <aside class="side-panel">
+    <h3>🏆 Quality Mission</h3>
+    <div class="mission"><strong>01 · SCREW FLOAT</strong><p>สกรูยกตัว / ยึดไม่แน่น</p></div>
+    <div class="mission"><strong>02 · EXTRA PLASTIC</strong><p>เศษพลาสติกส่วนเกิน</p></div>
+    <div class="mission"><strong>03 · ILS SLIT</strong><p>รอยบากหรือร่องผิดปกติ</p></div>
+    <div class="mission"><strong>04 · SEAL MISSING</strong><p>ซีลชั่วคราวหายไป</p></div>
+    <div class="mission"><strong>05 · DISK MISSING</strong><p>ชิ้นส่วนดิสก์ขาดหาย</p></div>
+    <div class="tip">💡 <b>วิธีเล่น:</b> แตะการ์ดครั้งละ 2 ใบ เพื่อจับคู่ชื่อ Defect ให้ตรงกัน จับคู่ครบทั้งหมดก่อนหมดเวลาเพื่อรับคะแนนโบนัส</div>
+  </aside>
+</div>
+<div class="footer">QUALITY MONTH · PLAY SMART · FIND THE DEFECT · PREVENT THE NEXT DEFECT</div>
+</div>
+
+<div id="welcome" class="overlay">
+  <div class="dialog">
+    <div class="dialog-icon">🛡️</div>
+    <h2>QUALITY HERO</h2>
+    <p>คุณพร้อมเป็นฮีโร่แห่งคุณภาพหรือยัง?<br>จับคู่ Defect ให้ครบ 5 คู่ ภายใน 90 วินาที</p>
+    <input id="playerName" class="name-input" maxlength="24" placeholder="ใส่ชื่อผู้เล่น (ไม่บังคับ)" aria-label="ชื่อผู้เล่น">
+    <button id="playBtn" class="btn btn-primary">🚀 START MISSION</button>
   </div>
 </div>
 
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <div class="modal-title">Attach Evidence</div>
-    <div class="modal-sub" id="modalSub"></div>
-    <div style="margin-bottom:16px">
-      <div class="modal-lbl">Root Cause / Remark</div>
-      <textarea class="modal-ta" id="evNote" placeholder="Root cause, action taken..."></textarea>
-    </div>
-    <div>
-      <div class="modal-lbl">Attach Files</div>
-      <div class="drop-zone" id="dropZone">
-        <input type="file" multiple id="fileInput" onchange="handleFiles(this.files)">
-        <div class="drop-text">Drop files or click to browse</div>
-        <div class="drop-sub">Images, PDF, Excel, Word</div>
-      </div>
-      <div class="ev-file-list" id="evFileList"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" onclick="saveEv()">Save Evidence</button>
-    </div>
+<div id="result" class="overlay hidden">
+  <div class="dialog">
+    <div id="resultIcon" class="dialog-icon">🏆</div>
+    <h2 id="resultTitle">MISSION COMPLETE!</h2>
+    <p id="resultText"></p>
+    <div class="stat" style="margin:15px 0"><div class="stat-label">FINAL SCORE</div><div id="finalScore" class="stat-value gold">0</div></div>
+    <button id="againBtn" class="btn btn-primary">↻ เล่นอีกครั้ง</button>
   </div>
 </div>
 
 <script>
-// ════════════════════════════
-//  DATA
-// ════════════════════════════
-const TARGETS = { av:96.0, pf:99.3, q:99.7, oee:95.0 };
-let summaryData = {
-  week:'FW03', oeeActual:92.2, oeeTarget:95.0,
-  bullets:[
-    {pass:false, text:'Availability not achieve target (92.8% vs 96.0%)'},
-    {pass:true,  text:'Performance achieve target (99.6% vs 99.3%)'},
-    {pass:true,  text:'Quality achieve target (99.7% vs 99.7%)'}
-  ],
-  improve:[
-    {key:'DT',          color:'yellow', val:'Waiting tooling update'},
-    {key:'Yield',       color:'red',    val:'Focus on HDA line to line defect variation'},
-    {key:'Performance', color:'green',  val:'Cycle time optimization ongoing'}
-  ]
-};
-let perfLines = [
-  {name:'London',       oee:89.4, q:99.5, pf:99.1, av:90.8, dt:9.8,  idle:0,    sw:3.2, input:16843, dgr:10300},
-  {name:'PCM/PDQ/PPL',  oee:96.2, q:99.9, pf:99.5, av:96.8, dt:2.9,  idle:0.3,  sw:3.9, input:35631, dgr:10333},
-  {name:'Sydney P1/P2', oee:92.6, q:99.6, pf:99.6, av:93.4, dt:6.6,  idle:0.16, sw:7.8, input:86515, dgr:10900},
-  {name:'Sydney P5',    oee:90.4, q:99.8, pf:99.7, av:90.8, dt:7.6,  idle:1.8,  sw:3.6, input:92242, dgr:10966}
+(() => {
+"use strict";
+
+const DEFECTS = [
+  {id:"screw", name:"SCREW FLOAT", symbol:"🔩", color:"#e7f4ff"},
+  {id:"plastic", name:"EXTRA PLASTIC", symbol:"🧩", color:"#e7f4ff"},
+  {id:"slit", name:"ILS SLIT", symbol:"⚙️", color:"#e7f4ff"},
+  {id:"seal", name:"SEAL MISSING", symbol:"⭕", color:"#e7f4ff"},
+  {id:"disk", name:"DISK MISSING", symbol:"💿", color:"#e7f4ff"}
 ];
-let trendData = [
-  {key:'Availability (AV)',  sub:'AV',                 target:96.0, vals:[92.4,91.7,91.5,92.7,93.6,93.7,93.5,92.4,92.0,91.4,90.9,92.8]},
-  {key:'Performance (PF)',   sub:'Output & Cycle Time', target:99.3, vals:[98.4,98.7,98.0,98.4,98.8,99.1,98.7,99.1,99.0,98.4,98.0,99.6]},
-  {key:'Quality (Q)',        sub:'Yield',               target:99.7, vals:[99.5,99.5,99.5,99.5,99.6,99.6,99.6,99.6,99.6,99.7,99.7,99.7]},
-  {key:'OEE',                sub:'AV × PF × Q',         target:95.0, vals:[90.5,90.0,89.2,90.9,92.1,92.5,91.9,91.2,90.7,89.6,88.8,92.2]}
-];
-const MONTHS = ['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','FW02','FW03'];
-const NOW_COL = 11;
-const evidenceStore = {};
-let currentEvKey = null, pendingFiles = [], editActive = false;
+const GAME_SECONDS = 90;
+const $ = id => document.getElementById(id);
+let deck = [], first = null, second = null, lock = false;
+let score = 0, attempts = 0, matchedPairs = 0, timeLeft = GAME_SECONDS;
+let running = false, paused = false, finished = false, soundOn = true;
+let clock = null, mismatchTimeout = null, audio = null, player = "Quality Hero";
 
-// ════════════════════════════
-//  CHART ENGINE
-// ════════════════════════════
-const chartInstances = {};
-
-function drawTrendChart(canvasId, dataRow, color, targetColor, fillColor, isWide) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width  = rect.width  * dpr;
-  canvas.height = rect.height * dpr;
-  canvas.style.width  = rect.width  + 'px';
-  canvas.style.height = rect.height + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  const W = rect.width, H = rect.height;
-  const PAD = { top:16, right:20, bottom:36, left:46 };
-  const gW = W - PAD.left - PAD.right;
-  const gH = H - PAD.top  - PAD.bottom;
-  const vals = dataRow.vals;
-  const target = dataRow.target;
-  const allVals = [...vals, target];
-  const minV = Math.min(...allVals) - 1.5;
-  const maxV = Math.max(...allVals) + 0.5;
-  function xPos(i)  { return PAD.left + (i/(vals.length-1))*gW; }
-  function yPos(v)  { return PAD.top  + (1-(v-minV)/(maxV-minV))*gH; }
-
-  // Grid lines
-  const steps = 4;
-  for (let s=0; s<=steps; s++) {
-    const v = minV + (maxV-minV)*s/steps;
-    const y = yPos(v);
-    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left+gW, y);
-    ctx.strokeStyle='rgba(255,255,255,.045)'; ctx.lineWidth=1; ctx.setLineDash([4,6]); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.font='600 10px Manrope,sans-serif'; ctx.fillStyle='#606068'; ctx.textAlign='right';
-    ctx.fillText(v.toFixed(1)+'%', PAD.left-6, y+3.5);
+function shuffle(items){
+  const arr = items.slice();
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
   }
-
-  // Target dashed line
-  const ty = yPos(target);
-  ctx.beginPath(); ctx.moveTo(PAD.left, ty); ctx.lineTo(PAD.left+gW, ty);
-  ctx.strokeStyle=targetColor||'rgba(251,191,36,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([6,5]); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.font='700 10px Manrope,sans-serif'; ctx.fillStyle=targetColor||'#FBBF24'; ctx.textAlign='left';
-  ctx.fillText('T '+target+'%', PAD.left+gW+3, ty+4);
-
-  // Gradient fill under line
-  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top+gH);
-  grad.addColorStop(0, fillColor.replace('1)','.22)').replace(')',',0.22)'));
-  grad.addColorStop(1, fillColor.replace('1)','0)').replace(')',',0)'));
-  ctx.beginPath();
-  ctx.moveTo(xPos(0), yPos(vals[0]));
-  for (let i=1; i<vals.length; i++) {
-    const x0=xPos(i-1),y0=yPos(vals[i-1]);
-    const x1=xPos(i),  y1=yPos(vals[i]);
-    const cpx=(x0+x1)/2;
-    ctx.bezierCurveTo(cpx,y0,cpx,y1,x1,y1);
-  }
-  ctx.lineTo(xPos(vals.length-1), PAD.top+gH);
-  ctx.lineTo(xPos(0), PAD.top+gH);
-  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
-
-  // Line stroke
-  ctx.beginPath();
-  ctx.moveTo(xPos(0), yPos(vals[0]));
-  for (let i=1; i<vals.length; i++) {
-    const x0=xPos(i-1),y0=yPos(vals[i-1]);
-    const x1=xPos(i),  y1=yPos(vals[i]);
-    const cpx=(x0+x1)/2;
-    ctx.bezierCurveTo(cpx,y0,cpx,y1,x1,y1);
-  }
-  ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.stroke();
-
-  // Dots
-  vals.forEach((v,i)=>{
-    const x=xPos(i), y=yPos(v);
-    const isNow = i===NOW_COL;
-    const miss = target - v;
-    const dotColor = miss<=0?'#4ADE80': miss<=5?'#FBBF24':'#F87171';
-    ctx.beginPath(); ctx.arc(x,y, isNow?6:3.5, 0,2*Math.PI);
-    ctx.fillStyle = isNow ? color : dotColor; ctx.fill();
-    if(isNow){ ctx.beginPath(); ctx.arc(x,y,9,0,2*Math.PI); ctx.strokeStyle=color; ctx.globalAlpha=.3; ctx.lineWidth=2; ctx.stroke(); ctx.globalAlpha=1; }
+  return arr;
+}
+function beep(freq=600,duration=.08){
+  if(!soundOn) return;
+  try{
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if(audio.state==="suspended") audio.resume();
+    const oscillator=audio.createOscillator();
+    const gain=audio.createGain();
+    oscillator.connect(gain);gain.connect(audio.destination);
+    oscillator.frequency.value=freq;
+    gain.gain.setValueAtTime(.06,audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
+    oscillator.start();oscillator.stop(audio.currentTime+duration);
+  }catch(e){}
+}
+function renderBoard(){
+  $("board").innerHTML="";
+  deck.forEach((card,index)=>{
+    const btn=document.createElement("button");
+    btn.className="card";
+    btn.type="button";
+    btn.dataset.index=index;
+    btn.setAttribute("aria-label","การ์ดปริศนา "+(index+1));
+    btn.innerHTML=`
+      <span class="back">?</span>
+      <span class="face">
+        <span class="symbol">${card.symbol}</span>
+        <span class="name">${card.name}</span>
+        <span class="kind">QUALITY DEFECT</span>
+      </span>`;
+    btn.addEventListener("click",()=>flipCard(index,btn));
+    $("board").appendChild(btn);
   });
-
-  // X labels
-  ctx.font='600 9px Manrope,sans-serif'; ctx.fillStyle='#606068'; ctx.textAlign='center';
-  const showIdx=[0,2,4,6,8,10,11];
-  showIdx.forEach(i=>{
-    if(i<vals.length) ctx.fillText(MONTHS[i], xPos(i), H-8);
-  });
-  // "FW03" label bold
-  ctx.font='800 10px Manrope,sans-serif'; ctx.fillStyle=color;
-  ctx.fillText('FW03', xPos(NOW_COL), H-8);
-
-  // NOW annotation
-  const nx=xPos(NOW_COL), ny=yPos(vals[NOW_COL]);
-  ctx.font='800 11px Manrope,sans-serif'; ctx.fillStyle=color; ctx.textAlign='center';
-  ctx.fillText(vals[NOW_COL]+'%', nx, ny-14);
 }
-
-function drawAllCharts() {
-  setTimeout(()=>{
-    drawTrendChart('chart-oee', trendData[3], '#3AE4C9', 'rgba(58,228,201,.8)',  'rgba(58,228,201,1)', true);
-    drawTrendChart('chart-av',  trendData[0], '#60a5fa', 'rgba(251,191,36,.8)',  'rgba(96,165,250,1)', false);
-    drawTrendChart('chart-pf',  trendData[1], '#3AE4C9', 'rgba(251,191,36,.8)',  'rgba(58,228,201,1)', false);
-    drawTrendChart('chart-q',   trendData[2], '#a78bfa', 'rgba(251,191,36,.8)',  'rgba(167,139,250,1)', false);
-    // update latest values
-    document.getElementById('clv-oee').textContent = trendData[3].vals[NOW_COL]+'%';
-    document.getElementById('clv-av').textContent  = trendData[0].vals[NOW_COL]+'%';
-    document.getElementById('clv-pf').textContent  = trendData[1].vals[NOW_COL]+'%';
-    document.getElementById('clv-q').textContent   = trendData[2].vals[NOW_COL]+'%';
-  }, 60);
+function updateUI(){
+  $("score").textContent=score.toLocaleString();
+  $("time").textContent=timeLeft;
+  $("matched").textContent=matchedPairs+" / "+DEFECTS.length;
+  $("attempts").textContent=attempts;
+  $("progress").style.width=(matchedPairs/DEFECTS.length*100)+"%";
+  $("pauseBtn").disabled=!running||finished;
+  $("pauseBtn").textContent=paused?"▶ เล่นต่อ":"Ⅱ พักเกม";
+  $("status").textContent=finished?"ภารกิจสิ้นสุด":paused?"พักเกมอยู่":running?"ค้นหาคู่ Defect ต่อไป!":"พร้อมเริ่มภารกิจ";
 }
-
-// ════════════════════════════
-//  UTILS
-// ════════════════════════════
-function bandClass(v, t) {
-  const d = t - v;
-  if (d <= 0) return 'band-green';
-  if (d <= 5) return 'band-yellow';
-  return 'band-red';
+function startGame(){
+  clearInterval(clock);
+  clearTimeout(mismatchTimeout);
+  score=0;attempts=0;matchedPairs=0;timeLeft=GAME_SECONDS;
+  first=null;second=null;lock=false;running=true;paused=false;finished=false;
+  deck=shuffle([...DEFECTS,...DEFECTS].map((d,i)=>({...d,instance:i,matched:false,flipped:false})));
+  renderBoard();
+  $("welcome").classList.add("hidden");
+  $("result").classList.add("hidden");
+  updateUI();
+  clock=setInterval(()=>{
+    if(!running||paused||finished)return;
+    timeLeft--;
+    updateUI();
+    if(timeLeft<=0) endGame(false);
+  },1000);
 }
-function recalcOEE() {
-  for (let c=0; c<12; c++) {
-    trendData[3].vals[c] = Math.round(trendData[0].vals[c]/100*trendData[1].vals[c]/100*trendData[2].vals[c]/100*1000)/10;
-  }
-}
-function updateClock() {
-  const n=new Date();
-  document.getElementById('clockDisplay').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
-}
-function refreshClock(){updateClock();}
-setInterval(updateClock,30000);
-
-// ════════════════════════════
-//  GAUGE
-// ════════════════════════════
-function drawGauge(pct) {
-  const c=document.getElementById('gaugeCanvas');
-  const ctx=c.getContext('2d');
-  const cx=160,cy=170,r=125;
-  ctx.clearRect(0,0,320,195);
-  ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,0);ctx.lineWidth=18;ctx.strokeStyle='#1F1F20';ctx.lineCap='round';ctx.stroke();
-  [{f:0,t:.6,c:'#dc2626'},{f:.6,t:.75,c:'#f97316'},{f:.75,t:.88,c:'#eab308'},{f:.88,t:1,c:'#22c55e'}]
-    .forEach(z=>{ctx.beginPath();ctx.arc(cx,cy,r,Math.PI+z.f*Math.PI,Math.PI+z.t*Math.PI);ctx.lineWidth=18;ctx.strokeStyle=z.c;ctx.lineCap='round';ctx.stroke();});
-  const tA=Math.PI+0.95*Math.PI;
-  ctx.beginPath();ctx.moveTo(cx+(r-14)*Math.cos(tA),cy+(r-14)*Math.sin(tA));ctx.lineTo(cx+(r+10)*Math.cos(tA),cy+(r+10)*Math.sin(tA));
-  ctx.strokeStyle='#FBBF24';ctx.lineWidth=4;ctx.lineCap='round';ctx.stroke();
-  const nA=Math.PI+Math.min(Math.max(pct/100,0),1)*Math.PI;
-  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+(r-12)*Math.cos(nA),cy+(r-12)*Math.sin(nA));
-  ctx.strokeStyle='#FAFAFA';ctx.lineWidth=3.5;ctx.lineCap='round';ctx.stroke();
-  ctx.beginPath();ctx.arc(cx,cy,8,0,2*Math.PI);ctx.fillStyle='#FAFAFA';ctx.fill();
-  ctx.font='700 11px Manrope,sans-serif';ctx.fillStyle='#606068';
-  ctx.fillText('0%',26,cy+18);ctx.fillText('100%',250,cy+18);
-  ctx.font='700 10px Manrope,sans-serif';ctx.fillStyle='#FBBF24';
-  ctx.fillText('95% T',cx+44,cy-105);
-}
-
-function renderMiniBars() {
-  const m=[
-    {l:'OEE',v:trendData[3].vals[NOW_COL],t:TARGETS.oee,col:'linear-gradient(180deg,#2168FD,#3AE4C9)'},
-    {l:'AV', v:trendData[0].vals[NOW_COL],t:TARGETS.av, col:'linear-gradient(180deg,#2168FD,#60a5fa)'},
-    {l:'PF', v:trendData[1].vals[NOW_COL],t:TARGETS.pf, col:'linear-gradient(180deg,#3AE4C9,#0D9488)'},
-    {l:'Q',  v:trendData[2].vals[NOW_COL],t:TARGETS.q,  col:'linear-gradient(180deg,#7C3AED,#a78bfa)'}
-  ];
-  document.getElementById('miniBars').innerHTML=m.map(x=>`
-    <div class="mini-bar-item">
-      <div class="mini-track"><div class="mini-fill" style="height:${x.v}%;background:${x.col}"></div></div>
-      <div class="mini-pct" style="color:${x.v>=x.t?'#4ADE80':'#F87171'}">${x.v}%</div>
-      <div class="mini-label">${x.l}</div>
-    </div>`).join('');
-}
-
-function updateHero() {
-  const oee=trendData[3].vals[NOW_COL], av=trendData[0].vals[NOW_COL];
-  const pf=trendData[1].vals[NOW_COL],  q=trendData[2].vals[NOW_COL];
-  document.getElementById('h-oee').textContent=oee+'%';
-  document.getElementById('h-av').textContent=av+'%';
-  document.getElementById('h-pf').textContent=pf+'%';
-  document.getElementById('h-q').textContent=q+'%';
-  function setD(id,a,t){
-    const d=a-t, el=document.getElementById(id);
-    if(Math.abs(d)<.05){el.className='hc-delta delta-pos';el.textContent='▲ On target';return;}
-    if(d>=0){el.className='hc-delta delta-pos';el.textContent=`▲ +${d.toFixed(1)}% vs target`;}
-    else{el.className='hc-delta delta-neg';el.textContent=`▼ ${d.toFixed(1)}% vs target`;}
-  }
-  setD('hd-oee',oee,TARGETS.oee);setD('hd-av',av,TARGETS.av);
-  setD('hd-pf',pf,TARGETS.pf);setD('hd-q',q,TARGETS.q);
-  document.getElementById('gaugePct').textContent=oee+'%';
-  document.getElementById('gaugeWk').textContent=summaryData.week;
-  drawGauge(oee); renderMiniBars();
-}
-
-// ════════════════════════════
-//  SUMMARY
-// ════════════════════════════
-function renderSummary() {
-  const d=summaryData, pass=d.oeeActual>=d.oeeTarget;
-  const cm={green:{r:'imp-green',k:'imp-key-g'},yellow:{r:'imp-yellow',k:'imp-key-y'},red:{r:'imp-red',k:'imp-key-r'},blue:{r:'imp-blue',k:'imp-key-b'}};
-  document.getElementById('sumDisplay').innerHTML=`
-    <div class="sum-week">Summary on <span>${d.week}</span></div>
-    <div class="status-tag ${pass?'tag-pass':'tag-fail'}" style="display:inline-block;margin-bottom:12px">${pass?'ON TARGET':'NOT ACHIEVED'}</div>
-    <div class="sum-oee-status" style="color:${pass?'#4ADE80':'#F87171'};margin-bottom:14px">OEE ${pass?'achieved':'not achieve'} target (${d.oeeActual}% vs ${d.oeeTarget}%)</div>
-    <div class="sum-bullets">${d.bullets.map(b=>`<div class="s-bullet"><div class="s-dot ${b.pass?'dot-g':'dot-r'}"></div><span>${b.text}</span></div>`).join('')}</div>
-    <div class="improve-label">Improvement Plan</div>
-    <div class="improve-list">${d.improve.map(item=>{const c=cm[item.color]||cm.blue;return`<div class="imp-row ${c.r}"><span class="imp-key ${c.k}">${item.key} :</span><span class="imp-val"> ${item.val}</span></div>`;}).join('')}</div>`;
-  ['sidebarWeek','fwChip','perfWkBadge'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=d.week;});
-  const ew=document.getElementById('equipWkBadge'); if(ew) ew.textContent=d.week;
-}
-
-function toggleEdit(){
-  editActive=!editActive;
-  const btn=document.getElementById('editBtn');
-  if(editActive){
-    btn.className='edit-btn editing';document.getElementById('editBtnTxt').textContent='Editing…';
-    document.getElementById('sumDisplay').style.display='none';
-    document.getElementById('sumEdit').classList.add('show');populateEditForm();
-  } else cancelEdit();
-}
-function populateEditForm(){
-  const d=summaryData;
-  document.getElementById('eWeek').value=d.week;
-  document.getElementById('eOeeA').value=d.oeeActual;
-  document.getElementById('eOeeT').value=d.oeeTarget;
-  const bl=document.getElementById('bulletEditList');bl.innerHTML='';
-  d.bullets.forEach((b,i)=>{const r=document.createElement('div');r.className='bullet-edit-row';r.innerHTML=`<select class="sel-inp" id="bst_${i}"><option value="pass" ${b.pass?'selected':''}>✓ Achieved</option><option value="fail" ${!b.pass?'selected':''}>✗ Not Achieved</option></select><input class="edit-inp" id="btx_${i}" value="${b.text}"><button class="rm-btn" onclick="removeBullet(${i})">×</button>`;bl.appendChild(r);});
-  const il=document.getElementById('impEditList');il.innerHTML='';
-  d.improve.forEach((item,i)=>{const r=document.createElement('div');r.className='imp-edit-row';r.innerHTML=`<input class="imp-key-inp" id="ik_${i}" value="${item.key}"><select class="sel-inp" id="ic_${i}"><option value="green" ${item.color==='green'?'selected':''}>🟢 Met</option><option value="yellow" ${item.color==='yellow'?'selected':''}>🟡 ±5%</option><option value="red" ${item.color==='red'?'selected':''}>🔴 &gt;5%</option><option value="blue" ${item.color==='blue'?'selected':''}>🔵 Info</option></select><input class="edit-inp" id="iv_${i}" value="${item.val}"><button class="rm-btn" onclick="removeImp(${i})">×</button>`;il.appendChild(r);});
-}
-function addBullet(){summaryData.bullets.push({pass:false,text:'New bullet'});populateEditForm();}
-function removeBullet(i){summaryData.bullets.splice(i,1);populateEditForm();}
-function addImp(){summaryData.improve.push({key:'Topic',color:'blue',val:'Description'});populateEditForm();}
-function removeImp(i){summaryData.improve.splice(i,1);populateEditForm();}
-function applyEdit(){
-  const d=summaryData;
-  d.week=document.getElementById('eWeek').value.trim()||d.week;
-  d.oeeActual=parseFloat(document.getElementById('eOeeA').value)||d.oeeActual;
-  d.oeeTarget=parseFloat(document.getElementById('eOeeT').value)||d.oeeTarget;
-  d.bullets=d.bullets.map((b,i)=>({pass:document.getElementById('bst_'+i)?.value==='pass',text:document.getElementById('btx_'+i)?.value||b.text}));
-  d.improve=d.improve.map((item,i)=>({key:document.getElementById('ik_'+i)?.value||item.key,color:document.getElementById('ic_'+i)?.value||item.color,val:document.getElementById('iv_'+i)?.value||item.val}));
-  cancelEdit();renderSummary();
-  const btn=document.getElementById('editBtn');
-  btn.innerHTML='<span style="color:#4ADE80;font-weight:800">✓ Saved</span>';
-  btn.style.cssText='position:absolute;top:16px;right:16px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:#4ADE80;font-family:Manrope,sans-serif;font-size:12px;font-weight:700;padding:6px 14px;border-radius:16px;cursor:pointer;display:inline-flex;align-items:center;gap:6px';
-  setTimeout(()=>{btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span id="editBtnTxt">Edit</span>`;btn.className='edit-btn';btn.style.cssText='';},1600);
-}
-function cancelEdit(){
-  editActive=false;
-  const btn=document.getElementById('editBtn');btn.className='edit-btn';
-  const t=document.getElementById('editBtnTxt');if(t)t.textContent='Edit';
-  document.getElementById('sumDisplay').style.display='';
-  document.getElementById('sumEdit').classList.remove('show');
-}
-
-// ════════════════════════════
-//  PERF TABLE
-// ════════════════════════════
-function renderPerfTable(){
-  document.getElementById('perfBody').innerHTML=perfLines.map((l,ri)=>{
-    const ev=evidenceStore['p_'+ri];
-    const oc=l.oee>=95?'oee-good':l.oee>=90?'oee-warn':'oee-bad';
-    const evBtn=`<span class="ev-btn ${ev?'ev-filled':''}" onclick="openModal('p_${ri}','${l.name}','OEE: ${l.oee}%')"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${ev?'#FBBF24':'#555'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>`;
-    return `<tr>
-      <td>${l.name}</td>
-      <td class="td-oee" style="padding:0;cursor:pointer" onclick="editPerfCell(this,${ri},'oee')"><div style="display:flex;align-items:center;justify-content:center;padding:12px 8px"><span class="oee-badge ${oc}">${l.oee}%</span></div></td>
-      <td style="padding:0;cursor:pointer" onclick="editPerfCell(this,${ri},'q')"><div class="cell-band ${bandClass(l.q,99.7)}">${l.q}%</div></td>
-      <td style="padding:0;cursor:pointer" onclick="editPerfCell(this,${ri},'pf')"><div class="cell-band ${bandClass(l.pf,99.3)}">${l.pf}%</div></td>
-      <td style="padding:0;cursor:pointer" onclick="editPerfCell(this,${ri},'av')"><div class="cell-band ${bandClass(l.av,96.0)}">${l.av}%</div></td>
-      <td style="color:${l.dt>5?'#F87171':'#FBBF24'};font-weight:700;cursor:pointer" onclick="editPerfCell(this,${ri},'dt')">${l.dt}%</td>
-      <td style="color:#CBD5E1;cursor:pointer" onclick="editPerfCell(this,${ri},'idle')">${l.idle}%</td>
-      <td style="color:#CBD5E1;cursor:pointer" onclick="editPerfCell(this,${ri},'sw')">${l.sw}%</td>
-      <td style="color:#CBD5E1;cursor:pointer" onclick="editPerfCell(this,${ri},'input')">${l.input.toLocaleString()}</td>
-      <td style="color:#CBD5E1;cursor:pointer" onclick="editPerfCell(this,${ri},'dgr')">${l.dgr.toLocaleString()}</td>
-      <td style="text-align:center">${evBtn}</td>
-    </tr>`;
-  }).join('');
-}
-function editPerfCell(td,ri,field){
-  if(td.querySelector('input'))return;
-  const isInt=field==='input'||field==='dgr';
-  const inp=document.createElement('input');
-  inp.type='number';inp.step=isInt?1:0.1;inp.min=0;inp.max=isInt?9999999:100;
-  inp.value=perfLines[ri][field];inp.className='edit-inp-cell';
-  td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
-  function commit(){
-    const nv=parseFloat(inp.value);
-    if(!isNaN(nv)&&nv>=0){
-      perfLines[ri][field]=isInt?Math.round(nv):Math.round(nv*10)/10;
-      if(['av','pf','q'].includes(field)) perfLines[ri].oee=Math.round(perfLines[ri].av/100*perfLines[ri].pf/100*perfLines[ri].q/100*1000)/10;
+function flipCard(index,element){
+  if(!running||paused||finished||lock)return;
+  const card=deck[index];
+  if(!card||card.matched||card.flipped)return;
+  card.flipped=true;element.classList.add("flipped");
+  element.setAttribute("aria-label",card.name);
+  beep(520,.06);
+  if(first===null){first={index,element,card};return;}
+  second={index,element,card};
+  attempts++;
+  if(first.card.id===second.card.id){
+    first.card.matched=true;second.card.matched=true;
+    first.element.classList.remove("flipped");second.element.classList.remove("flipped");
+    first.element.classList.add("matched");second.element.classList.add("matched");
+    first.element.disabled=true;second.element.disabled=true;
+    score+=100;matchedPairs++;
+    first=null;second=null;
+    beep(880,.14);
+    if(matchedPairs===DEFECTS.length){
+      score+=timeLeft*10;
+      updateUI();
+      endGame(true);
+      return;
     }
-    renderPerfTable();renderEquipGrid();
+  }else{
+    score=Math.max(0,score-10);
+    lock=true;
+    const a=first,b=second;
+    mismatchTimeout=setTimeout(()=>{
+      if(!finished){
+        a.card.flipped=false;b.card.flipped=false;
+        a.element.classList.remove("flipped");b.element.classList.remove("flipped");
+        a.element.setAttribute("aria-label","การ์ดปริศนา");
+        b.element.setAttribute("aria-label","การ์ดปริศนา");
+      }
+      first=null;second=null;lock=false;updateUI();
+    },750);
   }
-  inp.addEventListener('blur',commit);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderPerfTable();});
+  updateUI();
 }
-
-// ════════════════════════════
-//  TREND TABLE
-// ════════════════════════════
-function renderTrendTable(bodyId){
-  const body=document.getElementById(bodyId);if(!body)return;
-  body.innerHTML=trendData.map((row,ri)=>{
-    const isOEE=ri===3;
-    const cells=row.vals.map((v,ci)=>{
-      const isNow=ci===NOW_COL;
-      const bc=bandClass(v,row.target);
-      const ev=evidenceStore[`t_${ri}_${ci}`];
-      const showEv=row.target-v>0;
-      const evBtn=showEv?`<span class="ev-btn ${ev?'ev-filled':''}" onclick="event.stopPropagation();openModal('t_${ri}_${ci}','${row.key} — ${MONTHS[ci]}','${v}% vs ${row.target}%')"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="${ev?'#FBBF24':'rgba(255,255,255,.3)'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>`:'';
-      return `<td class="${isNow?'td-now':''}" onclick="editTrendCell(this,${ri},${ci})"><div class="cell-band ${bc}">${v}%${evBtn}</div></td>`;
-    }).join('');
-    return `<tr class="${isOEE?'oee-row':''}""><td>${row.key}</td><td>${row.sub}</td><td class="td-target">${row.target}%</td>${cells}</tr>`;
-  }).join('');
+function endGame(won){
+  if(finished)return;
+  finished=true;running=false;paused=false;
+  clearInterval(clock);clearTimeout(mismatchTimeout);
+  $("resultIcon").textContent=won?"🏆":"⏱️";
+  $("resultTitle").textContent=won?"MISSION COMPLETE!":"TIME'S UP!";
+  $("resultText").textContent=
+    (player?player+" — ":"")+
+    (won?"จับคู่ Defect สำเร็จครบทุกคู่!":"หมดเวลา ลองใหม่เพื่อทำคะแนนให้สูงขึ้น")+
+    " คุณจับคู่ได้ "+matchedPairs+" จาก "+DEFECTS.length+" คู่ และใช้ความพยายาม "+attempts+" ครั้ง";
+  $("finalScore").textContent=score.toLocaleString();
+  $("result").classList.remove("hidden");
+  updateUI();
+  beep(won?1000:250,.25);
 }
-function editTrendCell(td,ri,ci){
-  if(td.querySelector('input'))return;
-  const inp=document.createElement('input');
-  inp.type='number';inp.step=0.1;inp.min=0;inp.max=100;
-  inp.value=trendData[ri].vals[ci];inp.className='edit-inp-cell';
-  td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
-  function commit(){
-    const nv=parseFloat(inp.value);
-    if(!isNaN(nv)&&nv>=0&&nv<=100){trendData[ri].vals[ci]=Math.round(nv*10)/10;if(ri<3)recalcOEE();}
-    renderTrendTable('trendBody');renderTrendTable('trendBody2');
-    updateHero();renderPerfTable();renderEquipGrid();drawAllCharts();
-  }
-  inp.addEventListener('blur',commit);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){renderTrendTable('trendBody');renderTrendTable('trendBody2');}});
-}
-
-// ════════════════════════════
-//  EQUIPMENT
-// ════════════════════════════
-function renderEquipGrid(){
-  const g=document.getElementById('equipGrid');if(!g)return;
-  g.innerHTML=perfLines.map((l)=>{
-    const cls=l.oee>=95?'ec-good':l.oee>=90?'ec-warn':'ec-bad';
-    const vc=l.oee>=95?'eq-oee-good':l.oee>=90?'eq-oee-warn':'eq-oee-bad';
-    return `<div class="equip-card ${cls}"><div class="eq-name">${l.name}</div><div class="eq-line">Production Line</div><div class="eq-oee ${vc}">${l.oee}%</div><div style="font-size:11px;color:var(--dim);font-weight:600;margin-bottom:8px">OEE Score</div><div class="eq-meta"><span class="eq-pill">AV ${l.av}%</span><span class="eq-pill">PF ${l.pf}%</span><span class="eq-pill">Q ${l.q}%</span></div><div class="eq-meta" style="margin-top:5px"><span class="eq-pill">DT ${l.dt}%</span><span class="eq-pill">Input ${l.input.toLocaleString()}</span></div></div>`;
-  }).join('');
-}
-
-// ════════════════════════════
-//  EVIDENCE
-// ════════════════════════════
-function openModal(key,label,value){
-  currentEvKey=key;document.getElementById('modalSub').textContent=`Cell: ${label}  |  Value: ${value}`;
-  const ex=evidenceStore[key]||{};document.getElementById('evNote').value=ex.note||'';
-  pendingFiles=ex.files?[...ex.files]:[];renderFileList();
-  document.getElementById('overlay').classList.add('open');
-}
-function closeModal(){document.getElementById('overlay').classList.remove('open');currentEvKey=null;pendingFiles=[];}
-function handleFiles(files){Array.from(files).forEach(f=>pendingFiles.push({name:f.name}));renderFileList();}
-function renderFileList(){
-  document.getElementById('evFileList').innerHTML=pendingFiles.map((f,i)=>`<div class="ev-file-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg><span class="ev-fname">${f.name}</span><span class="ev-rm" onclick="removeFile(${i})">Remove</span></div>`).join('');
-}
-function removeFile(i){pendingFiles.splice(i,1);renderFileList();}
-function saveEv(){
-  if(!currentEvKey)return;
-  evidenceStore[currentEvKey]={note:document.getElementById('evNote').value,files:[...pendingFiles]};
-  closeModal();renderTrendTable('trendBody');renderTrendTable('trendBody2');renderPerfTable();
-}
-const dz=document.getElementById('dropZone');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
-dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');handleFiles(e.dataTransfer.files)});
-document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
-
-// ════════════════════════════
-//  NAVIGATION
-// ════════════════════════════
-function switchPage(id,navEl){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  if(navEl)navEl.classList.add('active');
-  if(id==='trend') drawAllCharts();
-}
-
-// ════════════════════════════
-//  MISC
-// ════════════════════════════
-function promptDate(){const d=prompt('Enter date:',document.getElementById('dateChip').textContent);if(d&&d.trim())document.getElementById('dateChip').textContent=d.trim();}
-function promptWeek(){const w=prompt('Enter week:',summaryData.week);if(w&&w.trim()){summaryData.week=w.trim().toUpperCase();renderSummary();renderTrendTable('trendBody');renderTrendTable('trendBody2');}}
-function exportCSV(){
-  const rows=[['Key Factor','Sub Factor','Target',...MONTHS]];
-  trendData.forEach(r=>rows.push([r.key,r.sub,r.target+'%',...r.vals.map(v=>v+'%')]));
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));
-  a.download=`HDA_OEE_${summaryData.week}.csv`;a.click();
-}
-
-// ════════════════════════════
-//  INIT
-// ════════════════════════════
-function init(){
-  updateClock();drawGauge(trendData[3].vals[NOW_COL]);
-  renderMiniBars();updateHero();renderSummary();
-  renderPerfTable();renderTrendTable('trendBody');renderTrendTable('trendBody2');renderEquipGrid();
-}
-document.addEventListener('DOMContentLoaded',init);
-window.addEventListener('resize',()=>{ if(document.getElementById('page-trend').classList.contains('active')) drawAllCharts(); });
+$("playBtn").addEventListener("click",()=>{
+  player=$("playerName").value.trim()||"Quality Hero";
+  startGame();
+});
+$("startBtn").addEventListener("click",()=>{
+  if(!finished&&running&&!confirm("เริ่มเกมใหม่หรือไม่? คะแนนปัจจุบันจะถูกรีเซ็ต"))return;
+  player=$("playerName").value.trim()||player||"Quality Hero";
+  startGame();
+});
+$("againBtn").addEventListener("click",startGame);
+$("pauseBtn").addEventListener("click",()=>{
+  if(!running||finished)return;
+  paused=!paused;
+  $("board").style.pointerEvents=paused?"none":"auto";
+  $("board").style.opacity=paused?".5":"1";
+  updateUI();
+});
+$("soundBtn").addEventListener("click",()=>{
+  soundOn=!soundOn;
+  $("soundBtn").textContent=soundOn?"🔊 เสียง: เปิด":"🔇 เสียง: ปิด";
+  if(soundOn)beep();
+});
+deck=shuffle([...DEFECTS,...DEFECTS].map((d,i)=>({...d,instance:i,matched:false,flipped:false})));
+renderBoard();updateUI();
+})();
 </script>
 </body>
 </html>
